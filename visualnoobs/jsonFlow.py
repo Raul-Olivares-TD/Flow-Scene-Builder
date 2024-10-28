@@ -58,11 +58,25 @@ class JsonFlowData():
 
         return note_list
 
+    def data_assets(self):
+        assets_list = []
+        for user_project in self.data_flow():
+            filters = [
+                ["project", "is", {"type": "Project", "id": user_project["id"]}]
+            ]
+
+            assets = self.sg.find("Asset", filters, ["code", "id",
+                                "sg_asset_type", "sg_versions", "project",
+                                "sequences"])
+            assets_list += [asset for asset in assets]
+
+        return assets_list
+
     def create_path(self):
         username = os.environ["USERNAME"]
         # hou_version = hou.applicationVersionString()
-        # v_split = hou_version.split["."]
-        # hou_v = "".join([v_split[0], v_split[1]])
+        # v_split = hou_version.split(".")
+        # hou_v = "houdini"+".".join([v_split[0], v_split[1]])
         hou_v = "houdini20.5"
         self.path = f"C:/Users/{username}/Documents/{hou_v}/otls/flowJson"
         self.file = f"{self.path}/dataFlow.json"
@@ -73,6 +87,7 @@ class JsonFlowData():
         d = {}
         d["Tasks"] = self.data_tasks()
         d["Notes"] = self.data_notes()
+        d["Assets"] = self.data_assets()
 
         try:
             os.makedirs(self.path)
@@ -82,3 +97,4 @@ class JsonFlowData():
             with open(self.file, "w") as f:
                 json.dump(d, f, indent=4)
 
+x = JsonFlowData().create_json()
