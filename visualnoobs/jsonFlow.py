@@ -96,5 +96,3 @@ class JsonFlowData():
         except:
             with open(self.file, "w") as f:
                 json.dump(d, f, indent=4)
-
-x = JsonFlowData().create_json()
