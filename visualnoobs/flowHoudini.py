@@ -1,8 +1,7 @@
 import json
-import time
 import jsonFlow
 import os
-from PySide2 import QtWidgets, QtCore
+from PySide2 import QtWidgets
 import psutil
 
 
@@ -101,6 +100,10 @@ class SceneBuilder(QtWidgets.QWidget):
         self.check_notes = QtWidgets.QCheckBox("View Notes:")
         self.check_notes.stateChanged.connect(self.notes)
 
+        # Assets
+        self.assets_check = QtWidgets.QCheckBox("Get Assets")
+        self.assets_check.stateChanged.connect(self.get_assets)
+
         # Button load Scene
         btn = QtWidgets.QPushButton("Scene Build")
         btn.clicked.connect(self.notes)
@@ -123,6 +126,8 @@ class SceneBuilder(QtWidgets.QWidget):
         self.grid_lyt.addWidget(self.project_dir, 2, 3)
         self.grid_lyt.addWidget(self.scene_dir, 2, 4)
         self.grid_lyt.addWidget(self.check_notes, 3, 0)
+        self.grid_lyt.addWidget(self.assets_check, 3, 1)
+
         # Adds to the Button Horizontal layout
         btn_lyt.addWidget(btn)
 
@@ -256,7 +261,7 @@ class SceneBuilder(QtWidgets.QWidget):
     def create_scene_path(self):
         self.project_dir.setChecked(False)
         self.scene_dir.setChecked(False)
-        self.check_notes.setChecked(False)
+        # self.check_notes.setChecked(False)
 
         try:
             current_row = self.table.currentRow()
@@ -392,7 +397,6 @@ class SceneBuilder(QtWidgets.QWidget):
     def notes(self):
         if self.check_notes.isChecked():
             r = self.get_json_tasks()["Notes"]
-            a = self.task_text
             # Notes text
             self.notes_text = QtWidgets.QTextEdit()
             self.notes_text.setReadOnly(True)
@@ -405,6 +409,16 @@ class SceneBuilder(QtWidgets.QWidget):
                         self.notes_text.setText(content)
         else:
             self.notes_text.deleteLater()
+
+    def get_assets(self):
+        if self.assets_check.isChecked():
+            json_assets = self.get_json_tasks()["Assets"]
+            # Assets list
+            self.assets_list = QtWidgets.QListWidget()
+            self.assets_list.addItems(["Test1", "Test2", "Test3"])
+            self.grid_lyt.addWidget(self.assets_list, 4, 1)
+        else:
+            self.assets_list.deleteLater()
 
     def build_scene(self):
         #
