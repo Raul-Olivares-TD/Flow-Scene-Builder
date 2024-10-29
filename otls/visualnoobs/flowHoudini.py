@@ -261,7 +261,7 @@ class SceneBuilder(QtWidgets.QWidget):
     def create_scene_path(self):
         self.project_dir.setChecked(False)
         self.scene_dir.setChecked(False)
-        # self.check_notes.setChecked(False)
+        self.check_notes.setChecked(False)
 
         try:
             current_row = self.table.currentRow()
@@ -423,6 +423,9 @@ class SceneBuilder(QtWidgets.QWidget):
             self.assets_list = QtWidgets.QListWidget()
             self.assets_list.addItems(["Test1", "Test2", "Test3"])
             self.grid_lyt.addWidget(self.assets_list, 4, 1)
+            for i in json_assets:
+                print(i)
+
         else:
             self.assets_list.deleteLater()
 
@@ -432,7 +435,7 @@ class SceneBuilder(QtWidgets.QWidget):
         #
         # try:
         #     note = obj.createStickyNote()
-        #     note.setText(self.get_notes()[0]["content"])
+        #     note.setText(self.content)
         #     note.setPosition((0, 0))
         #
         # except:
@@ -454,8 +457,11 @@ class SceneBuilder(QtWidgets.QWidget):
 
         self.close()
 
-
-app = QtWidgets.QApplication([])
-w = SceneBuilder()
-w.show()
-app.exec_()
+if __name__ == "main":
+    app = QtWidgets.QApplication([])
+    w = SceneBuilder()
+    w.show()
+    app.exec_()
+else:
+    w = SceneBuilder()
+    w.show()
