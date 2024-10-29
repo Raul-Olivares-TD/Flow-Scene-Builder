@@ -347,6 +347,8 @@ class SceneBuilder(QtWidgets.QWidget):
             self.warning_message()
 
     def add_directory(self):
+        """ Testing for now.
+        """
         dirname = os.path.dirname(self.complete_path)
         basename = os.path.basename(self.complete_path)
         project_folder = self.project_text
@@ -395,6 +397,8 @@ class SceneBuilder(QtWidgets.QWidget):
                 self.path.setText(self.complete_path)
 
     def notes(self):
+        """ Testing for now.
+        """
         if self.check_notes.isChecked():
             r = self.get_json_tasks()["Notes"]
             # Notes text
@@ -411,6 +415,8 @@ class SceneBuilder(QtWidgets.QWidget):
             self.notes_text.deleteLater()
 
     def get_assets(self):
+        """ Testing for now.
+        """
         if self.assets_check.isChecked():
             json_assets = self.get_json_tasks()["Assets"]
             # Assets list
