@@ -1,3 +1,4 @@
+# import hou
 import json
 import os
 import shotgun_api3
@@ -45,6 +46,11 @@ class JsonFlowData():
 
         return tasks_list
 
+    def data_shots(self):
+        shot_list = [shot["entity"]["name"] for shot in self.data_tasks()]
+
+        return set(shot_list)
+
     def data_notes(self):
         note_list = []
         for user_project in self.data_flow():
@@ -52,9 +58,10 @@ class JsonFlowData():
                 ["project", "is", {"type": "Project", "id": user_project["id"]}]
             ]
 
-            notes = self.sg.find("Note",filters,["content", "tasks"])
+            notes = self.sg.find("Note",filters,["content", "tasks", "note_links"])
 
-            note_list += [note for note in notes]
+            note_list += [note for note in notes for link in note["note_links"]
+                          if link["name"] in self.data_shots()]
 
         return note_list
 
@@ -65,17 +72,18 @@ class JsonFlowData():
                 ["project", "is", {"type": "Project", "id": user_project["id"]}]
             ]
 
-            assets = self.sg.find("Asset", filters, ["code", "id",
-                                "sg_asset_type", "sg_versions", "project",
-                                "sequences"])
-            assets_list += [asset for asset in assets]
+            assets = self.sg.find("Asset", filters, ["code", "sg_asset_type",
+                                                     "sg_versions", "shots"])
+
+            assets_list += [asset for asset in assets for shot in asset["shots"]
+                            if shot["name"] in self.data_shots()]
 
         return assets_list
 
     def create_path(self):
         username = os.environ["USERNAME"]
-        # hou_version = hou.applicationVersionString()
-        # v_split = hou_version.split(".")
+        # houdini_version = hou.applicationVersionString()
+        # v_split = houdini_version.split(".")
         # hou_v = "houdini"+".".join([v_split[0], v_split[1]])
         hou_v = "houdini20.5"
         self.path = f"C:/Users/{username}/Documents/{hou_v}/otls/flowJson"
