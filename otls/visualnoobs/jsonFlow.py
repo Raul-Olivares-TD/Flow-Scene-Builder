@@ -58,27 +58,53 @@ class JsonFlowData():
                 ["project", "is", {"type": "Project", "id": user_project["id"]}]
             ]
 
-            notes = self.sg.find("Note",filters,["content", "tasks", "note_links"])
+            notes = self.sg.find("Note",filters,["content", "tasks",
+                                                 "note_links"])
+
+            print(notes)
 
             note_list += [note for note in notes for link in note["note_links"]
                           if link["name"] in self.data_shots()]
 
-        return note_list
+        # return note_list
 
-    def data_assets(self):
-        assets_list = []
+    def shot_assets(self):
+        shot_assets_list = []
         for user_project in self.data_flow():
             filters = [
                 ["project", "is", {"type": "Project", "id": user_project["id"]}]
             ]
 
+            shot_assets = self.sg.find("Shot", filters, ["code", "assets"])
+
+            shot_assets_list += [asset for asset in shot_assets
+                                 if asset["code"] in self.data_shots()]
+
+        return shot_assets_list
+
+    def data_assets(self):
+        assets_list = []
+        for user_project in self.data_flow():
+            filters = [
+                ["project", "is", {"type": "Project", "id": user_project["id"]}],
+            ]
+
             assets = self.sg.find("Asset", filters, ["code", "sg_asset_type",
-                                                     "sg_versions", "shots"])
+                                                     "sg_versions", "shots",
+                                                     "sg_status_list"])
 
-            assets_list += [asset for asset in assets for shot in asset["shots"]
-                            if shot["name"] in self.data_shots()]
+            # for asset in assets:
+            #     for shot in asset["shots"]:
+            #         print(shot)
+            #         print(asset["code"])
+            #         if shot["name"] in self.data_shots():
+            #             print(True)
 
-        return assets_list
+            print(assets)
+            # assets_list += [asset for asset in assets for shot in asset["shots"]
+            #                 if shot["name"] in self.data_shots()]
+
+        # return assets_list
 
     def create_path(self):
         username = os.environ["USERNAME"]
@@ -104,3 +130,6 @@ class JsonFlowData():
         except:
             with open(self.file, "w") as f:
                 json.dump(d, f, indent=4)
+
+x = JsonFlowData().data_notes()
+print(x)
