@@ -104,12 +104,13 @@ class SceneBuilder(QtWidgets.QWidget):
         # Assets
         self.assets_check = QtWidgets.QCheckBox("Get Assets")
         self.assets_check.stateChanged.connect(self.get_assets)
-        self.assets_check.stateChanged.connect(self.assets_move)
+        # self.assets_check.stateChanged.connect(self.assets_move)
 
         # Asset Butons for pass the assets to the import list
         self.btn_pase = QtWidgets.QToolButton()
         self.btn_pase.clicked.connect(self.assets_move)
         self.btn_delete = QtWidgets.QToolButton()
+        self.btn_delete.clicked.connect(self.asset_delete)
 
         # Label Assets to import
         self.txt_assets_to_import = QtWidgets.QLabel("Assets to import")
@@ -449,8 +450,10 @@ class SceneBuilder(QtWidgets.QWidget):
                 self.import_assets_list = QtWidgets.QListWidget()
                 self.assets_list.setSelectionMode(
                     QtWidgets.QAbstractItemView.ExtendedSelection)
-                assets_list = []
+                self.import_assets_list.setSelectionMode(
+                    QtWidgets.QAbstractItemView.ExtendedSelection)
 
+                assets_list = []
                 assets_list += [asset["code"] for asset in json_assets
                                for shot in asset["shots"]
                                if self.shot_text == shot["name"]]
@@ -459,10 +462,11 @@ class SceneBuilder(QtWidgets.QWidget):
                 self.grid_lyt.addWidget(self.assets_list, 4, 1)
                 self.grid_lyt.addWidget(self.import_assets_list, 4, 3)
                 self.assets_list.itemSelectionChanged.connect(self.assets_to_import)
+                self.import_assets_list.itemSelectionChanged.connect(self.asset_delete)
             else:
                 self.assets_list.deleteLater()
                 self.import_assets_list.deleteLater()
-                
+
         except:
             self.warning_message()
 
@@ -473,14 +477,13 @@ class SceneBuilder(QtWidgets.QWidget):
         return import_list
 
     def assets_move(self):
-        # self.import_assets_list.addItems(self.assets_to_import())
-        pass
-
-
-
+        self.import_assets_list.addItems(self.assets_to_import())
 
     def asset_delete(self):
-        pass
+        # No funciona bn corregir
+        for t in self.import_assets_list.selectedItems():
+            self.import_assets_list.takeItem(self.import_assets_list.row(t))
+
 
     def build_scene(self):
         #
