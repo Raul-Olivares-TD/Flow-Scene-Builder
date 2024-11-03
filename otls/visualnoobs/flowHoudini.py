@@ -19,7 +19,8 @@ class SceneBuilder(QtWidgets.QWidget):
         hor_lyt = QtWidgets.QHBoxLayout()  # Horizontal layout
         self.table_lyt = QtWidgets.QVBoxLayout()  # Table layout
         btn_lyt = QtWidgets.QHBoxLayout()  # Btn layout
-        self.grid_lyt = QtWidgets.QGridLayout()  # Grid
+        self.grid_lyt = QtWidgets.QGridLayout()  # Grid layout
+        self.assets_btn = QtWidgets.QVBoxLayout() # Asset butons layout
 
         # SET LAYOUTS
         self.setLayout(main_lyt)
@@ -103,6 +104,15 @@ class SceneBuilder(QtWidgets.QWidget):
         # Assets
         self.assets_check = QtWidgets.QCheckBox("Get Assets")
         self.assets_check.stateChanged.connect(self.get_assets)
+        self.assets_check.stateChanged.connect(self.assets_move)
+
+        # Asset Butons for pass the assets to the import list
+        self.btn_pase = QtWidgets.QToolButton()
+        self.btn_pase.clicked.connect(self.assets_move)
+        self.btn_delete = QtWidgets.QToolButton()
+
+        # Label Assets to import
+        self.txt_assets_to_import = QtWidgets.QLabel("Assets to import")
 
         # Button load Scene
         btn = QtWidgets.QPushButton("Scene Build")
@@ -114,6 +124,9 @@ class SceneBuilder(QtWidgets.QWidget):
         hor_lyt.addWidget(user_label)
         hor_lyt.addWidget(user)
         hor_lyt.addWidget(update_btn)
+        self.assets_btn.addWidget(self.btn_pase)
+        self.assets_btn.addWidget(self.btn_delete)
+
         # Adds to the Grid Layout
         self.grid_lyt.addWidget(disks_group, 1, 0)
         self.grid_lyt.addWidget(project_group, 1, 1)
@@ -127,6 +140,8 @@ class SceneBuilder(QtWidgets.QWidget):
         self.grid_lyt.addWidget(self.scene_dir, 2, 4)
         self.grid_lyt.addWidget(self.check_notes, 3, 0)
         self.grid_lyt.addWidget(self.assets_check, 3, 1)
+        self.grid_lyt.addWidget(self.txt_assets_to_import, 3, 3)
+        self.grid_lyt.addLayout(self.assets_btn, 4, 2)
 
         # Adds to the Button Horizontal layout
         btn_lyt.addWidget(btn)
@@ -168,13 +183,17 @@ class SceneBuilder(QtWidgets.QWidget):
             # y que se elimine en el create_json_data con el deleteLater
             pass
 
+    def change_cheks(self):
+        self.project_dir.setChecked(False)
+        self.scene_dir.setChecked(False)
+        self.check_notes.setChecked(False)
+        self.assets_check.setChecked(False)
+
     def exec_functions(self):
         """ Executes all the method and functions that I need."""
         jsonFlow.JsonFlowData().create_json()
         self.table.deleteLater()
-        self.project_dir.setChecked(False)
-        self.scene_dir.setChecked(False)
-        self.check_notes.setChecked(False)
+        self.change_cheks()
         self.path.setText("")
         try:
             self.task_text = ""
@@ -259,9 +278,7 @@ class SceneBuilder(QtWidgets.QWidget):
         return disk_list
 
     def create_scene_path(self):
-        self.project_dir.setChecked(False)
-        self.scene_dir.setChecked(False)
-        self.check_notes.setChecked(False)
+        self.change_cheks()
 
         try:
             current_row = self.table.currentRow()
@@ -313,6 +330,8 @@ class SceneBuilder(QtWidgets.QWidget):
         message.setDetailedText("You must select a task from the table "
                                 "in order to be able to create the path")
 
+        self.change_cheks()
+
         # Icono Severity q en la documentacón te dicen cuales hay
         message.setIcon(QtWidgets.QMessageBox.Warning)
         message.exec_()
@@ -329,8 +348,7 @@ class SceneBuilder(QtWidgets.QWidget):
 
         )
 
-        self.project_dir.setChecked(False)
-        self.scene_dir.setChecked(False)
+        self.change_cheks()
 
         try:
             if path == "":
@@ -349,85 +367,120 @@ class SceneBuilder(QtWidgets.QWidget):
     def add_directory(self):
         """ Testing for now.
         """
-        dirname = os.path.dirname(self.complete_path)
-        basename = os.path.basename(self.complete_path)
-        project_folder = self.project_text
-        scene_folder = "scenes"
+        try:
+            dirname = os.path.dirname(self.complete_path)
+            basename = os.path.basename(self.complete_path)
+            project_folder = self.project_text
+            scene_folder = "scenes"
 
-        if os.path.splitdrive(self.complete_path)[0] != "C:":
-            if self.project_dir.isChecked() and self.scene_dir.isChecked():
+            if os.path.splitdrive(self.complete_path)[0] != "C:":
+                if self.project_dir.isChecked() and self.scene_dir.isChecked():
 
-                self.path.setText(f"{dirname}{project_folder}/{scene_folder}/"
-                                  f"{basename}")
+                    self.path.setText(f"{dirname}{project_folder}/{scene_folder}/"
+                                      f"{basename}")
 
-            elif self.project_dir.isChecked():
+                elif self.project_dir.isChecked():
 
-                self.path.setText(f"{dirname}{project_folder}/"
-                                  f"{basename}")
+                    self.path.setText(f"{dirname}{project_folder}/"
+                                      f"{basename}")
 
-            elif self.scene_dir.isChecked():
+                elif self.scene_dir.isChecked():
 
-                self.path.setText(f"{dirname}{scene_folder}/"
-                                  f"{basename}")
+                    self.path.setText(f"{dirname}{scene_folder}/"
+                                      f"{basename}")
 
-            else:
-                self.complete_path = f"{self.mega_path}{self.project_text}_{self.sequence_text}_" \
-                                     f"{self.shot_text}_{self.task_text}.hip"
-                self.path.setText(self.complete_path)
-
-        else:
-            if self.project_dir.isChecked() and self.scene_dir.isChecked():
-
-                self.path.setText(f"{dirname}/{project_folder}/{scene_folder}/"
-                                  f"{basename}")
-
-            elif self.project_dir.isChecked():
-
-                self.path.setText(f"{dirname}/{project_folder}/"
-                                  f"{basename}")
-
-            elif self.scene_dir.isChecked():
-
-                self.path.setText(f"{dirname}/{scene_folder}/"
-                                  f"{basename}")
+                else:
+                    self.complete_path = f"{self.mega_path}{self.project_text}_{self.sequence_text}_" \
+                                         f"{self.shot_text}_{self.task_text}.hip"
+                    self.path.setText(self.complete_path)
 
             else:
-                self.complete_path = f"{self.mega_path}{self.project_text}_{self.sequence_text}_" \
-                                     f"{self.shot_text}_{self.task_text}.hip"
-                self.path.setText(self.complete_path)
+                if self.project_dir.isChecked() and self.scene_dir.isChecked():
+
+                    self.path.setText(f"{dirname}/{project_folder}/{scene_folder}/"
+                                      f"{basename}")
+
+                elif self.project_dir.isChecked():
+
+                    self.path.setText(f"{dirname}/{project_folder}/"
+                                      f"{basename}")
+
+                elif self.scene_dir.isChecked():
+
+                    self.path.setText(f"{dirname}/{scene_folder}/"
+                                      f"{basename}")
+
+                else:
+                    self.complete_path = f"{self.mega_path}{self.project_text}_{self.sequence_text}_" \
+                                         f"{self.shot_text}_{self.task_text}.hip"
+                    self.path.setText(self.complete_path)
+        except:
+            self.warning_message()
 
     def notes(self):
         """ Testing for now.
         """
-        if self.check_notes.isChecked():
-            r = self.get_json_tasks()["Notes"]
-            # Notes text
-            self.notes_text = QtWidgets.QTextEdit()
-            self.notes_text.setReadOnly(True)
-            self.grid_lyt.addWidget(self.notes_text, 4, 0)
+        try:
+            if self.check_notes.isChecked():
+                r = self.get_json_tasks()["Notes"]
+                # Notes text
+                self.notes_text = QtWidgets.QTextEdit()
+                self.notes_text.setReadOnly(True)
+                self.grid_lyt.addWidget(self.notes_text, 4, 0)
 
-            for i in r:
-                for j in i["tasks"]:
-                    if self.task_text == j["name"]:
-                        content = i["content"]
-                        self.notes_text.setText(content)
-        else:
-            self.notes_text.deleteLater()
+                for i in r:
+                    for j in i["tasks"]:
+                        if self.task_text == j["name"]:
+                            content = i["content"]
+                            self.notes_text.setText(content)
+            else:
+                self.notes_text.deleteLater()
+        except:
+            self.warning_message()
 
     def get_assets(self):
         """ Testing for now.
         """
-        if self.assets_check.isChecked():
-            json_assets = self.get_json_tasks()["Assets"]
-            # Assets list
-            self.assets_list = QtWidgets.QListWidget()
-            self.assets_list.addItems(["Test1", "Test2", "Test3"])
-            self.grid_lyt.addWidget(self.assets_list, 4, 1)
-            for i in json_assets:
-                print(i)
+        try:
+            if self.assets_check.isChecked():
+                json_assets = self.get_json_tasks()["Assets"]
+                # Assets list
+                self.assets_list = QtWidgets.QListWidget()
+                self.import_assets_list = QtWidgets.QListWidget()
+                self.assets_list.setSelectionMode(
+                    QtWidgets.QAbstractItemView.ExtendedSelection)
+                assets_list = []
 
-        else:
-            self.assets_list.deleteLater()
+                assets_list += [asset["code"] for asset in json_assets
+                               for shot in asset["shots"]
+                               if self.shot_text == shot["name"]]
+
+                self.assets_list.addItems(assets_list)
+                self.grid_lyt.addWidget(self.assets_list, 4, 1)
+                self.grid_lyt.addWidget(self.import_assets_list, 4, 3)
+                self.assets_list.itemSelectionChanged.connect(self.assets_to_import)
+            else:
+                self.assets_list.deleteLater()
+                self.import_assets_list.deleteLater()
+                
+        except:
+            self.warning_message()
+
+    def assets_to_import(self):
+        txt = self.assets_list.selectedItems()
+        import_list = [t.text() for t in txt]
+
+        return import_list
+
+    def assets_move(self):
+        # self.import_assets_list.addItems(self.assets_to_import())
+        pass
+
+
+
+
+    def asset_delete(self):
+        pass
 
     def build_scene(self):
         #
@@ -457,11 +510,8 @@ class SceneBuilder(QtWidgets.QWidget):
 
         self.close()
 
-if __name__ == "main":
-    app = QtWidgets.QApplication([])
-    w = SceneBuilder()
-    w.show()
-    app.exec_()
-else:
-    w = SceneBuilder()
-    w.show()
+
+app = QtWidgets.QApplication([])
+w = SceneBuilder()
+w.show()
+app.exec_()
