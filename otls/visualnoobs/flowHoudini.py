@@ -462,7 +462,7 @@ class SceneBuilder(QtWidgets.QWidget):
                 self.grid_lyt.addWidget(self.assets_list, 4, 1)
                 self.grid_lyt.addWidget(self.import_assets_list, 4, 3)
                 self.assets_list.itemSelectionChanged.connect(self.assets_to_import)
-                self.import_assets_list.itemSelectionChanged.connect(self.asset_delete)
+                self.import_assets_list.itemSelectionChanged.connect(self.assets_to_remove)
             else:
                 self.assets_list.deleteLater()
                 self.import_assets_list.deleteLater()
@@ -479,11 +479,14 @@ class SceneBuilder(QtWidgets.QWidget):
     def assets_move(self):
         self.import_assets_list.addItems(self.assets_to_import())
 
-    def asset_delete(self):
-        # No funciona bn corregir
-        for t in self.import_assets_list.selectedItems():
-            self.import_assets_list.takeItem(self.import_assets_list.row(t))
+    def assets_to_remove(self):
+        remove_assets = [t for t in self.import_assets_list.selectedItems()]
 
+        return remove_assets
+
+    def asset_delete(self):
+        for t in self.assets_to_remove():
+            self.import_assets_list.takeItem(self.import_assets_list.row(t))
 
     def build_scene(self):
         #
