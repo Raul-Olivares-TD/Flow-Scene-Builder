@@ -1,7 +1,7 @@
 import json
 import jsonFlow
 import os
-from PySide2 import QtWidgets
+from PySide2 import QtWidgets, QtCore
 import psutil
 
 
@@ -14,7 +14,7 @@ class SceneBuilder(QtWidgets.QWidget):
 
     def build_layout(self):
         """ Creates the UI interfice and his elements."""
-        # CREATES LAYOUT
+        # CREATES LAYOUTS
         main_lyt = QtWidgets.QVBoxLayout()  # Main layout
         hor_lyt = QtWidgets.QHBoxLayout()  # Horizontal layout
         self.table_lyt = QtWidgets.QVBoxLayout()  # Table layout
@@ -30,92 +30,115 @@ class SceneBuilder(QtWidgets.QWidget):
         main_lyt.addLayout(btn_lyt)
 
         # ELEMENTS
-        # Label Widget
+        # Label: Show the User title
         user_label = QtWidgets.QLabel("User: ")
 
-        # Flow User
+        # Label: Show the Flow user email
         user = QtWidgets.QLabel()
         user.setText("aperonmxr@gmail.com")
 
-        # Update tasks
+        # Button: Update tasks, exec functions and creates the table
         update_btn = QtWidgets.QPushButton("Update Data Flow")
         update_btn.clicked.connect(self.exec_functions)
         update_btn.clicked.connect(self.get_json_tasks)
         update_btn.clicked.connect(self.create_table)
 
-        # Disks Group
+        # Disks Group: Wraps the device section of the menu
         disks_group = QtWidgets.QGroupBox("Device")
         disks_group_lyt = QtWidgets.QVBoxLayout()
         disks_group.setLayout(disks_group_lyt)
 
-        # Menu disks
+        # Menu disks: Menu with all the device in the pc
         self.menu_disks = QtWidgets.QComboBox()
         # self.menu_disks.addItem("")
         self.menu_disks.addItems(self.detect_disks())
         disks_group_lyt.addWidget(self.menu_disks)
         self.menu_disks.currentTextChanged.connect(self.create_scene_path)
 
-        # Project Group
+        # Project Group: Show the project name selected at the table
         project_group = QtWidgets.QGroupBox("Project")
         self.project_group_lyt = QtWidgets.QVBoxLayout()
         project_group.setLayout(self.project_group_lyt)
         self.project_group_label = QtWidgets.QLabel()
 
-        # Sequence Group
+        # Sequence Group: Show the sequence name selected at the table
         seq_group = QtWidgets.QGroupBox("Sequence")
         self.seq_group_lyt = QtWidgets.QVBoxLayout()
         seq_group.setLayout(self.seq_group_lyt)
         self.seq_group_label = QtWidgets.QLabel()
 
-        # Shot Group
+        # Shot Group: Show the shot name selected at the table
         shot_group = QtWidgets.QGroupBox("Shot")
         self.shot_group_lyt = QtWidgets.QVBoxLayout()
         shot_group.setLayout(self.shot_group_lyt)
         self.shot_group_label = QtWidgets.QLabel()
 
-        # Task group
+        # Task group: Show the task name selected at the table
         task_group = QtWidgets.QGroupBox("Task")
         self.task_group_lyt = QtWidgets.QVBoxLayout()
         task_group.setLayout(self.task_group_lyt)
         self.task_group_label = QtWidgets.QLabel()
 
-        # Path label
+        # Path label: Show the title scene path
         path_label = QtWidgets.QLabel("Scene Path: ")
-        # Path
+        # Line edit: Line with the path of the scene
         self.path = QtWidgets.QLineEdit()
 
-        # Tool Button dialog File
+        # Tool Button: Dialog File
         btn_file = QtWidgets.QToolButton()
         btn_file.clicked.connect(self.dialog_directory)
         icon = QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DirIcon)
         btn_file.setIcon(icon)
 
-        # Checkbox Project Directory
+        # Checkbox: Creates a project directory
         self.project_dir = QtWidgets.QCheckBox("Project directory")
         self.project_dir.stateChanged.connect(self.add_directory)
-        # Checkbox Scene Directory
+        # Checkbox: Creates a scenes directory
         self.scene_dir = QtWidgets.QCheckBox("Scene directory")
         self.scene_dir.stateChanged.connect(self.add_directory)
-        # Checkbox Notes
-        self.check_notes = QtWidgets.QCheckBox("View Notes:")
-        self.check_notes.stateChanged.connect(self.notes)
 
-        # Assets
+        # Checkbox: Allows to show the notes
+        self.check_notes = QtWidgets.QCheckBox("View Notes")
+        self.check_notes.stateChanged.connect(self.notes)
+        # Text: Show the notes in a text
+        self.notes_text = QtWidgets.QTextEdit()
+        self.notes_text.setReadOnly(True)
+        self.grid_lyt.addWidget(self.notes_text, 4, 0)
+
+        # Checkbox: Allows to show the assets
         self.assets_check = QtWidgets.QCheckBox("Get Assets")
         self.assets_check.stateChanged.connect(self.get_assets)
-        # self.assets_check.stateChanged.connect(self.assets_move)
 
-        # Asset Butons for pass the assets to the import list
-        self.btn_pase = QtWidgets.QToolButton()
-        self.btn_pase.clicked.connect(self.assets_move)
+        # Assets lists: Show the assets at the shot
+        self.assets_list = QtWidgets.QListWidget()
+        self.assets_list.setSelectionMode(
+            QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.assets_list.itemSelectionChanged.connect(self.assets_to_import)
+
+        # Tool Button: Button to move items
+        self.btn_move = QtWidgets.QToolButton()
+        right_arrow = QtWidgets.QApplication.style().standardIcon(
+            QtWidgets.QStyle.SP_ArrowRight)
+        self.btn_move.setIcon(right_arrow)
+        self.btn_move.clicked.connect(self.assets_move)
+        # Tool Button: Button to delete items
         self.btn_delete = QtWidgets.QToolButton()
+        delete_icon = QtWidgets.QApplication.style().standardIcon(
+            QtWidgets.QStyle.SP_TrashIcon)
+        self.btn_delete.setIcon(delete_icon)
         self.btn_delete.clicked.connect(self.asset_delete)
 
-        # Label Assets to import
+        # Label: Assets to import title
         self.txt_assets_to_import = QtWidgets.QLabel("Assets to import")
 
-        # Button load Scene
+        # List: Assets list that will be imported in the scene
+        self.import_assets_list = QtWidgets.QListWidget()
+        self.import_assets_list.setSelectionMode(
+            QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.import_assets_list.itemSelectionChanged.connect(self.assets_to_remove)
+
+        # Button: Load Scene
         btn = QtWidgets.QPushButton("Scene Build")
         btn.clicked.connect(self.notes)
         btn.clicked.connect(self.build_scene)
@@ -125,7 +148,7 @@ class SceneBuilder(QtWidgets.QWidget):
         hor_lyt.addWidget(user_label)
         hor_lyt.addWidget(user)
         hor_lyt.addWidget(update_btn)
-        self.assets_btn.addWidget(self.btn_pase)
+        self.assets_btn.addWidget(self.btn_move)
         self.assets_btn.addWidget(self.btn_delete)
 
         # Adds to the Grid Layout
@@ -136,15 +159,18 @@ class SceneBuilder(QtWidgets.QWidget):
         self.grid_lyt.addWidget(task_group, 1, 4)
         self.grid_lyt.addWidget(path_label, 2, 0)
         self.grid_lyt.addWidget(self.path, 2, 1)
-        self.grid_lyt.addWidget(btn_file, 2, 2)
+        self.grid_lyt.addWidget(btn_file, 2, 2, alignment=QtCore.Qt.AlignCenter)
         self.grid_lyt.addWidget(self.project_dir, 2, 3)
         self.grid_lyt.addWidget(self.scene_dir, 2, 4)
         self.grid_lyt.addWidget(self.check_notes, 3, 0)
         self.grid_lyt.addWidget(self.assets_check, 3, 1)
         self.grid_lyt.addWidget(self.txt_assets_to_import, 3, 3)
-        self.grid_lyt.addLayout(self.assets_btn, 4, 2)
+        self.grid_lyt.addWidget(self.assets_list, 4, 1)
+        self.grid_lyt.addLayout(self.assets_btn, 4, 2,
+                                alignment=QtCore.Qt.AlignCenter)
+        self.grid_lyt.addWidget(self.import_assets_list, 4, 3)
 
-        # Adds to the Button Horizontal layout
+        # Adds the Button Horizontal layout
         btn_lyt.addWidget(btn)
 
     def create_table(self):
@@ -424,10 +450,6 @@ class SceneBuilder(QtWidgets.QWidget):
         try:
             if self.check_notes.isChecked():
                 r = self.get_json_tasks()["Notes"]
-                # Notes text
-                self.notes_text = QtWidgets.QTextEdit()
-                self.notes_text.setReadOnly(True)
-                self.grid_lyt.addWidget(self.notes_text, 4, 0)
 
                 for i in r:
                     for j in i["tasks"]:
@@ -445,13 +467,6 @@ class SceneBuilder(QtWidgets.QWidget):
         try:
             if self.assets_check.isChecked():
                 json_assets = self.get_json_tasks()["Assets"]
-                # Assets list
-                self.assets_list = QtWidgets.QListWidget()
-                self.import_assets_list = QtWidgets.QListWidget()
-                self.assets_list.setSelectionMode(
-                    QtWidgets.QAbstractItemView.ExtendedSelection)
-                self.import_assets_list.setSelectionMode(
-                    QtWidgets.QAbstractItemView.ExtendedSelection)
 
                 assets_list = []
                 assets_list += [asset["code"] for asset in json_assets
@@ -459,10 +474,7 @@ class SceneBuilder(QtWidgets.QWidget):
                                if self.shot_text == shot["name"]]
 
                 self.assets_list.addItems(assets_list)
-                self.grid_lyt.addWidget(self.assets_list, 4, 1)
-                self.grid_lyt.addWidget(self.import_assets_list, 4, 3)
-                self.assets_list.itemSelectionChanged.connect(self.assets_to_import)
-                self.import_assets_list.itemSelectionChanged.connect(self.assets_to_remove)
+
             else:
                 self.assets_list.deleteLater()
                 self.import_assets_list.deleteLater()
@@ -472,9 +484,9 @@ class SceneBuilder(QtWidgets.QWidget):
 
     def assets_to_import(self):
         txt = self.assets_list.selectedItems()
-        import_list = [t.text() for t in txt]
+        import_assets = [t.text() for t in txt]
 
-        return import_list
+        return import_assets
 
     def assets_move(self):
         self.import_assets_list.addItems(self.assets_to_import())
