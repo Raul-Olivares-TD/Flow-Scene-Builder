@@ -1,7 +1,7 @@
 import json
 import jsonFlow
 import os
-from PySide2 import QtWidgets, QtCore
+from PySide2 import QtWidgets, QtCore, QtGui
 import psutil
 
 
@@ -206,11 +206,18 @@ class SceneBuilder(QtWidgets.QWidget):
             self.table_lyt.addWidget(self.table)
 
         except:
-            # Probar a hacer un text edit con el texto update cuando no hay tabla
-            # y que se elimine en el create_json_data con el deleteLater
-            pass
+            # Text Update Data Flow
+            self.text_update = QtWidgets.QTextEdit()
+            self.text_update.setText("UPDATE THE DATA FLOW")
+            self.text_update.setAlignment(QtCore.Qt.AlignCenter)
+            # Modify the font size
+            font = self.text_update.font()
+            font.setPointSize(42)
+            self.text_update.setFont(font)
+            self.table_lyt.addWidget(self.text_update)
 
     def change_cheks(self):
+        """ Method that change the checkboxes to False."""
         self.project_dir.setChecked(False)
         self.scene_dir.setChecked(False)
         self.check_notes.setChecked(False)
@@ -220,6 +227,7 @@ class SceneBuilder(QtWidgets.QWidget):
         """ Executes all the method and functions that I need."""
         jsonFlow.JsonFlowData().create_json()
         self.table.deleteLater()
+        self.text_update.deleteLater()
         self.change_cheks()
         self.path.setText("")
         try:
@@ -295,8 +303,10 @@ class SceneBuilder(QtWidgets.QWidget):
         :return: List with all de devices/disks at the pc
         :rtype: list
         """
+        # List of all disk partitions on the system
         disks = psutil.disk_partitions()
         disk_list = []
+        # Get the disk partitions and append to the list
         for disk in disks:
             dev = disk.device
             dev1 = dev.replace("\\", "/")
@@ -305,35 +315,44 @@ class SceneBuilder(QtWidgets.QWidget):
         return disk_list
 
     def create_scene_path(self):
+        """ Create a route using the table data and groups of boxes."""
         self.change_cheks()
 
         try:
             current_row = self.table.currentRow()
             total_columns = self.table.columnCount()
 
+            # Loop through each row and columns to get the selected data
             table_data = [self.table.item(current_row, column).text()
                           for column in range(total_columns)]
 
+            # Get the project and set it
             self.project_group_label.setText(table_data[2])
             self.project_group_lyt.addWidget(self.project_group_label)
             self.project_text = self.project_group_label.text()
 
+            # Get the sequence and set it
             self.seq_group_label.setText(table_data[0])
             self.seq_group_lyt.addWidget(self.seq_group_label)
             self.sequence_text = self.seq_group_label.text()
 
+            # Get the shot and set it
             self.shot_group_label.setText(table_data[1])
             self.shot_group_lyt.addWidget(self.shot_group_label)
             self.shot_text = self.shot_group_label.text()
 
+            # Get the task and set it
             self.task_group_label.setText(table_data[4])
             self.task_group_lyt.addWidget(self.task_group_label)
             self.task_text = self.task_group_label.text()
 
+            # Detect with te signal the current disk at the menu
             self.disk_text = self.menu_disks.currentText()
 
+            # Get the username of the system
             os_user = os.environ["USERNAME"]
 
+            # Creates the path to save the scene
             if self.disk_text == "C:/":
                 self.mega_path = f"{self.disk_text}Users/{os_user}/"
 
@@ -349,9 +368,10 @@ class SceneBuilder(QtWidgets.QWidget):
             self.path.setText("")
 
     def warning_message(self):
-        # Crear el dialog
+        """ Warning message if no task is selected in the table."""
+        # Create the dialog
         message = QtWidgets.QMessageBox(self)
-        # Poner el titulo de la ventana
+        # Set window title
         message.setWindowTitle("WARNING!!")
         message.setText("Select a task at the table")
         message.setDetailedText("You must select a task from the table "
@@ -359,18 +379,19 @@ class SceneBuilder(QtWidgets.QWidget):
 
         self.change_cheks()
 
-        # Icono Severity q en la documentacón te dicen cuales hay
+        # Icon Severity
         message.setIcon(QtWidgets.QMessageBox.Warning)
         message.exec_()
 
     def dialog_directory(self):
-        # Crear el dialog
+        """ Alternative window that allows select any directory on the pc."""
+        # Create the dialog
         path = QtWidgets.QFileDialog.getExistingDirectory(
-            # parent a la misma ventana
+            # Parent at the same window
             self,
-            # Titulo de la ventana
+            # Set window title
             "Select Custom Path",
-            # En q disco buscar por defecto
+            # Disk search by default
             "C:"
 
         )
@@ -379,7 +400,6 @@ class SceneBuilder(QtWidgets.QWidget):
 
         try:
             if path == "":
-                # Esto devuevle el path en forma de tuple seleccionado en la carpeta
                 self.path.setText("")
             elif len(path) == 3:
                 rep_path = path.replace("/", "")
