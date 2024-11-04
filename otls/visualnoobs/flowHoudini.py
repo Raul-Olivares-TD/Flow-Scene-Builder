@@ -315,7 +315,7 @@ class SceneBuilder(QtWidgets.QWidget):
         return disk_list
 
     def create_scene_path(self):
-        """ Create a route using the table data and groups of boxes."""
+        """ Create a path using the table data and groups of boxes."""
         self.change_cheks()
 
         try:
@@ -398,6 +398,7 @@ class SceneBuilder(QtWidgets.QWidget):
 
         self.change_cheks()
 
+        # Creates the path with the dialog directory
         try:
             if path == "":
                 self.path.setText("")
@@ -412,14 +413,20 @@ class SceneBuilder(QtWidgets.QWidget):
             self.warning_message()
 
     def add_directory(self):
-        """ Testing for now.
+        """ Adds the project directory and the scenes directory to the paths
+            if the checks of that options are checked.
         """
         try:
+            # Gets the dirname of the path
             dirname = os.path.dirname(self.complete_path)
+            # Gets the basename of the path
             basename = os.path.basename(self.complete_path)
+            # String with the project name
             project_folder = self.project_text
+            # String with the text scenes
             scene_folder = "scenes"
 
+            # Check different options to create or not to create any directory
             if os.path.splitdrive(self.complete_path)[0] != "C:":
                 if self.project_dir.isChecked() and self.scene_dir.isChecked():
 
@@ -465,18 +472,22 @@ class SceneBuilder(QtWidgets.QWidget):
             self.warning_message()
 
     def notes(self):
-        """ Testing for now.
+        """ Get and set the notes of each task from the flow
+            by the json data.
         """
         try:
             if self.check_notes.isChecked():
-                r = self.get_json_tasks()["Notes"]
+                # Get the notes at the json data
+                notes_res = self.get_json_tasks()["Notes"]
 
-                for i in r:
-                    for j in i["tasks"]:
-                        if self.task_text == j["name"]:
-                            content = i["content"]
+                for note in notes_res:
+                    # Get the tasks in the notes data and set the notes
+                    for task in note["tasks"]:
+                        if self.task_text == task["name"]:
+                            content = note["content"]
                             self.notes_text.setText(content)
             else:
+                # Delete the notes if isn't checked
                 self.notes_text.deleteLater()
         except:
             self.warning_message()
