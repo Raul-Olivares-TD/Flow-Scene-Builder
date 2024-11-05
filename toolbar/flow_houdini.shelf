@@ -13,7 +13,7 @@
     <script scriptType="python"><![CDATA[import json
 import visualnoobs.jsonFlow as jsonFlow
 import os
-from PySide2 import QtWidgets
+from PySide2 import QtWidgets, QtCore
 import psutil
 
 
@@ -23,18 +23,19 @@ class SceneBuilder(QtWidgets.QWidget):
         self.build_layout()
         self.create_table()
         self.build_tasks()
-
+        
         # Apply the Houdini stylesheet.
         self.setStyleSheet(hou.qt.styleSheet())
-        
+
     def build_layout(self):
         """ Creates the UI interfice and his elements."""
-        # CREATES LAYOUT
+        # CREATES LAYOUTS
         main_lyt = QtWidgets.QVBoxLayout()  # Main layout
         hor_lyt = QtWidgets.QHBoxLayout()  # Horizontal layout
         self.table_lyt = QtWidgets.QVBoxLayout()  # Table layout
         btn_lyt = QtWidgets.QHBoxLayout()  # Btn layout
-        self.grid_lyt = QtWidgets.QGridLayout()  # Grid
+        self.grid_lyt = QtWidgets.QGridLayout()  # Grid layout
+        self.assets_btn = QtWidgets.QVBoxLayout() # Asset butons layout
 
         # SET LAYOUTS
         self.setLayout(main_lyt)
@@ -44,82 +45,119 @@ class SceneBuilder(QtWidgets.QWidget):
         main_lyt.addLayout(btn_lyt)
 
         # ELEMENTS
-        # Label Widget
+        # Label: Show the User title
         user_label = QtWidgets.QLabel("User: ")
 
-        # Flow User
+        # Label: Show the Flow user email
         user = QtWidgets.QLabel()
-        user.setText("aperonmxr@gmail.com")
+        FLOW_USER = os.environ["FLOW_USER"]
+        user.setText(FLOW_USER)
 
-        # Update tasks
+        # Button: Update tasks, exec functions and creates the table
         update_btn = QtWidgets.QPushButton("Update Data Flow")
         update_btn.clicked.connect(self.exec_functions)
         update_btn.clicked.connect(self.get_json_tasks)
         update_btn.clicked.connect(self.create_table)
 
-        # Disks Group
+        # Disks Group: Wraps the device section of the menu
         disks_group = QtWidgets.QGroupBox("Device")
         disks_group_lyt = QtWidgets.QVBoxLayout()
         disks_group.setLayout(disks_group_lyt)
 
-        # Menu disks
+        # Menu disks: Menu with all the device in the pc
         self.menu_disks = QtWidgets.QComboBox()
         # self.menu_disks.addItem("")
         self.menu_disks.addItems(self.detect_disks())
         disks_group_lyt.addWidget(self.menu_disks)
         self.menu_disks.currentTextChanged.connect(self.create_scene_path)
 
-        # Project Group
+        # Project Group: Show the project name selected at the table
         project_group = QtWidgets.QGroupBox("Project")
         self.project_group_lyt = QtWidgets.QVBoxLayout()
         project_group.setLayout(self.project_group_lyt)
         self.project_group_label = QtWidgets.QLabel()
 
-        # Sequence Group
+        # Sequence Group: Show the sequence name selected at the table
         seq_group = QtWidgets.QGroupBox("Sequence")
         self.seq_group_lyt = QtWidgets.QVBoxLayout()
         seq_group.setLayout(self.seq_group_lyt)
         self.seq_group_label = QtWidgets.QLabel()
 
-        # Shot Group
+        # Shot Group: Show the shot name selected at the table
         shot_group = QtWidgets.QGroupBox("Shot")
         self.shot_group_lyt = QtWidgets.QVBoxLayout()
         shot_group.setLayout(self.shot_group_lyt)
         self.shot_group_label = QtWidgets.QLabel()
 
-        # Task group
+        # Task group: Show the task name selected at the table
         task_group = QtWidgets.QGroupBox("Task")
         self.task_group_lyt = QtWidgets.QVBoxLayout()
         task_group.setLayout(self.task_group_lyt)
         self.task_group_label = QtWidgets.QLabel()
 
-        # Path label
+        # Path label: Show the title scene path
         path_label = QtWidgets.QLabel("Scene Path: ")
-        # Path
+        # Line edit: Line with the path of the scene
         self.path = QtWidgets.QLineEdit()
 
-        # Tool Button dialog File
+        # Tool Button: Dialog File
         btn_file = QtWidgets.QToolButton()
         btn_file.clicked.connect(self.dialog_directory)
         icon = QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DirIcon)
         btn_file.setIcon(icon)
 
-        # Checkbox Project Directory
+        # Checkbox: Creates a project directory
         self.project_dir = QtWidgets.QCheckBox("Project directory")
         self.project_dir.stateChanged.connect(self.add_directory)
-        # Checkbox Scene Directory
+        # Checkbox: Creates a scenes directory
         self.scene_dir = QtWidgets.QCheckBox("Scene directory")
         self.scene_dir.stateChanged.connect(self.add_directory)
-        # Checkbox Notes
-        self.check_notes = QtWidgets.QCheckBox("View Notes:")
-        self.check_notes.stateChanged.connect(self.notes)
 
-        # Assets
+        # Checkbox: Allows to show the notes
+        self.check_notes = QtWidgets.QCheckBox("View Notes")
+        self.check_notes.stateChanged.connect(self.notes)
+        # Text: Show the notes in a text
+        self.notes_text = QtWidgets.QTextEdit()
+        self.notes_text.setReadOnly(True)
+
+
+        # Checkbox: Allows to show the assets
         self.assets_check = QtWidgets.QCheckBox("Get Assets")
         self.assets_check.stateChanged.connect(self.get_assets)
 
-        # Button load Scene
+        # Assets lists: Show the assets at the shot
+        self.assets_list = QtWidgets.QListWidget()
+        self.assets_list.setDragEnabled(True)
+        self.assets_list.setSelectionMode(
+            QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.assets_list.itemSelectionChanged.connect(self.assets_to_import)
+
+        # Tool Button: Button to move items
+        self.btn_move = QtWidgets.QToolButton()
+        right_arrow = QtWidgets.QApplication.style().standardIcon(
+            QtWidgets.QStyle.SP_ArrowRight)
+        self.btn_move.setIcon(right_arrow)
+        self.btn_move.clicked.connect(self.assets_move)
+        # Tool Button: Button to delete items
+        self.btn_delete = QtWidgets.QToolButton()
+        delete_icon = QtWidgets.QApplication.style().standardIcon(
+            QtWidgets.QStyle.SP_TrashIcon)
+        self.btn_delete.setIcon(delete_icon)
+        self.btn_delete.clicked.connect(self.asset_delete)
+
+        # Label: Assets to import title
+        self.txt_assets_to_import = QtWidgets.QLabel("Assets to import")
+
+        # List: Assets list that will be imported in the scene
+        self.import_assets_list = QtWidgets.QListWidget()
+        self.import_assets_list.setAcceptDrops(True)
+        self.import_assets_list.setDragDropMode(QtWidgets.QAbstractItemView.DropOnly)
+        self.import_assets_list.setSelectionMode(
+            QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.import_assets_list.itemSelectionChanged.connect(self.assets_to_remove)
+
+        # Button: Load Scene
         btn = QtWidgets.QPushButton("Scene Build")
         btn.clicked.connect(self.notes)
         btn.clicked.connect(self.build_scene)
@@ -129,6 +167,9 @@ class SceneBuilder(QtWidgets.QWidget):
         hor_lyt.addWidget(user_label)
         hor_lyt.addWidget(user)
         hor_lyt.addWidget(update_btn)
+        self.assets_btn.addWidget(self.btn_move)
+        self.assets_btn.addWidget(self.btn_delete)
+
         # Adds to the Grid Layout
         self.grid_lyt.addWidget(disks_group, 1, 0)
         self.grid_lyt.addWidget(project_group, 1, 1)
@@ -137,13 +178,19 @@ class SceneBuilder(QtWidgets.QWidget):
         self.grid_lyt.addWidget(task_group, 1, 4)
         self.grid_lyt.addWidget(path_label, 2, 0)
         self.grid_lyt.addWidget(self.path, 2, 1)
-        self.grid_lyt.addWidget(btn_file, 2, 2)
+        self.grid_lyt.addWidget(btn_file, 2, 2, alignment=QtCore.Qt.AlignCenter)
         self.grid_lyt.addWidget(self.project_dir, 2, 3)
         self.grid_lyt.addWidget(self.scene_dir, 2, 4)
         self.grid_lyt.addWidget(self.check_notes, 3, 0)
         self.grid_lyt.addWidget(self.assets_check, 3, 1)
+        self.grid_lyt.addWidget(self.txt_assets_to_import, 3, 3)
+        self.grid_lyt.addWidget(self.notes_text, 4, 0)
+        self.grid_lyt.addWidget(self.assets_list, 4, 1)
+        self.grid_lyt.addLayout(self.assets_btn, 4, 2,
+                                alignment=QtCore.Qt.AlignCenter)
+        self.grid_lyt.addWidget(self.import_assets_list, 4, 3)
 
-        # Adds to the Button Horizontal layout
+        # Adds the Button Horizontal layout
         btn_lyt.addWidget(btn)
 
     def create_table(self):
@@ -179,21 +226,33 @@ class SceneBuilder(QtWidgets.QWidget):
             self.table_lyt.addWidget(self.table)
 
         except:
-            # Probar a hacer un text edit con el texto update cuando no hay tabla
-            # y que se elimine en el create_json_data con el deleteLater
-            pass
+            # Text Update Data Flow
+            self.text_update = QtWidgets.QTextEdit()
+            self.text_update.setText("UPDATE THE DATA FLOW FOR VIEW THE TABLE")
+            self.text_update.setAlignment(QtCore.Qt.AlignCenter)
+            # Modify the font size
+            font = self.text_update.font()
+            font.setPointSize(38)
+            self.text_update.setFont(font)
+            self.table_lyt.addWidget(self.text_update)
+
+    def change_cheks(self):
+        """ Method that change the checkboxes to False."""
+        self.project_dir.setChecked(False)
+        self.scene_dir.setChecked(False)
+        self.check_notes.setChecked(False)
+        self.assets_check.setChecked(False)
 
     def exec_functions(self):
         """ Executes all the method and functions that I need."""
         jsonFlow.JsonFlowData().create_json()
         self.table.deleteLater()
-        self.project_dir.setChecked(False)
-        self.scene_dir.setChecked(False)
-        self.check_notes.setChecked(False)
+        self.text_update.deleteLater()
+        self.change_cheks()
         self.path.setText("")
         try:
             self.task_text = ""
-            self.notes_text.deleteLater()
+            self.notes_text.clear()
         except:
             pass
 
@@ -264,8 +323,10 @@ class SceneBuilder(QtWidgets.QWidget):
         :return: List with all de devices/disks at the pc
         :rtype: list
         """
+        # List of all disk partitions on the system
         disks = psutil.disk_partitions()
         disk_list = []
+        # Get the disk partitions and append to the list
         for disk in disks:
             dev = disk.device
             dev1 = dev.replace("\\", "/")
@@ -274,37 +335,44 @@ class SceneBuilder(QtWidgets.QWidget):
         return disk_list
 
     def create_scene_path(self):
-        self.project_dir.setChecked(False)
-        self.scene_dir.setChecked(False)
-        # self.check_notes.setChecked(False)
+        """ Create a path using the table data and groups of boxes."""
+        self.change_cheks()
 
         try:
             current_row = self.table.currentRow()
             total_columns = self.table.columnCount()
 
+            # Loop through each row and columns to get the selected data
             table_data = [self.table.item(current_row, column).text()
                           for column in range(total_columns)]
 
+            # Get the project and set it
             self.project_group_label.setText(table_data[2])
             self.project_group_lyt.addWidget(self.project_group_label)
             self.project_text = self.project_group_label.text()
 
+            # Get the sequence and set it
             self.seq_group_label.setText(table_data[0])
             self.seq_group_lyt.addWidget(self.seq_group_label)
             self.sequence_text = self.seq_group_label.text()
 
+            # Get the shot and set it
             self.shot_group_label.setText(table_data[1])
             self.shot_group_lyt.addWidget(self.shot_group_label)
             self.shot_text = self.shot_group_label.text()
 
+            # Get the task and set it
             self.task_group_label.setText(table_data[4])
             self.task_group_lyt.addWidget(self.task_group_label)
             self.task_text = self.task_group_label.text()
 
+            # Detect with te signal the current disk at the menu
             self.disk_text = self.menu_disks.currentText()
 
+            # Get the username of the system
             os_user = os.environ["USERNAME"]
 
+            # Creates the path to save the scene
             if self.disk_text == "C:/":
                 self.mega_path = f"{self.disk_text}Users/{os_user}/"
 
@@ -320,36 +388,39 @@ class SceneBuilder(QtWidgets.QWidget):
             self.path.setText("")
 
     def warning_message(self):
-        # Crear el dialog
+        """ Warning message if no task is selected in the table."""
+        # Create the dialog
         message = QtWidgets.QMessageBox(self)
-        # Poner el titulo de la ventana
+        # Set window title
         message.setWindowTitle("WARNING!!")
         message.setText("Select a task at the table")
         message.setDetailedText("You must select a task from the table "
                                 "in order to be able to create the path")
 
-        # Icono Severity q en la documentacÃ³n te dicen cuales hay
+        self.change_cheks()
+
+        # Icon Severity
         message.setIcon(QtWidgets.QMessageBox.Warning)
         message.exec_()
 
     def dialog_directory(self):
-        # Crear el dialog
+        """ Alternative window that allows select any directory on the pc."""
+        # Create the dialog
         path = QtWidgets.QFileDialog.getExistingDirectory(
-            # parent a la misma ventana
+            # Parent at the same window
             self,
-            # Titulo de la ventana
+            # Set window title
             "Select Custom Path",
-            # En q disco buscar por defecto
+            # Disk search by default
             "C:"
 
         )
 
-        self.project_dir.setChecked(False)
-        self.scene_dir.setChecked(False)
+        self.change_cheks()
 
+        # Creates the path with the dialog directory
         try:
             if path == "":
-                # Esto devuevle el path en forma de tuple seleccionado en la carpeta
                 self.path.setText("")
             elif len(path) == 3:
                 rep_path = path.replace("/", "")
@@ -362,87 +433,160 @@ class SceneBuilder(QtWidgets.QWidget):
             self.warning_message()
 
     def add_directory(self):
-        """ Testing for now.
+        """ Adds the project directory and the scenes directory to the paths
+            if the checks of that options are checked.
         """
-        dirname = os.path.dirname(self.complete_path)
-        basename = os.path.basename(self.complete_path)
-        project_folder = self.project_text
-        scene_folder = "scenes"
+        try:
+            # Gets the dirname of the path
+            dirname = os.path.dirname(self.complete_path)
+            # Gets the basename of the path
+            basename = os.path.basename(self.complete_path)
+            # String with the project name
+            project_folder = self.project_text
+            # String with the text scenes
+            scene_folder = "scenes"
 
-        if os.path.splitdrive(self.complete_path)[0] != "C:":
-            if self.project_dir.isChecked() and self.scene_dir.isChecked():
+            # Check different options to create or not any directory
+            if os.path.splitdrive(self.complete_path)[0] != "C:":
+                if self.project_dir.isChecked() and self.scene_dir.isChecked():
 
-                self.path.setText(f"{dirname}{project_folder}/{scene_folder}/"
-                                  f"{basename}")
+                    self.path.setText(f"{dirname}{project_folder}/{scene_folder}/"
+                                      f"{basename}")
 
-            elif self.project_dir.isChecked():
+                elif self.project_dir.isChecked():
 
-                self.path.setText(f"{dirname}{project_folder}/"
-                                  f"{basename}")
+                    self.path.setText(f"{dirname}{project_folder}/"
+                                      f"{basename}")
 
-            elif self.scene_dir.isChecked():
+                elif self.scene_dir.isChecked():
 
-                self.path.setText(f"{dirname}{scene_folder}/"
-                                  f"{basename}")
+                    self.path.setText(f"{dirname}{scene_folder}/"
+                                      f"{basename}")
 
-            else:
-                self.complete_path = f"{self.mega_path}{self.project_text}_{self.sequence_text}_" \
-                                     f"{self.shot_text}_{self.task_text}.hip"
-                self.path.setText(self.complete_path)
-
-        else:
-            if self.project_dir.isChecked() and self.scene_dir.isChecked():
-
-                self.path.setText(f"{dirname}/{project_folder}/{scene_folder}/"
-                                  f"{basename}")
-
-            elif self.project_dir.isChecked():
-
-                self.path.setText(f"{dirname}/{project_folder}/"
-                                  f"{basename}")
-
-            elif self.scene_dir.isChecked():
-
-                self.path.setText(f"{dirname}/{scene_folder}/"
-                                  f"{basename}")
+                else:
+                    self.complete_path = f"{self.mega_path}{self.project_text}_{self.sequence_text}_" \
+                                         f"{self.shot_text}_{self.task_text}.hip"
+                    self.path.setText(self.complete_path)
 
             else:
-                self.complete_path = f"{self.mega_path}{self.project_text}_{self.sequence_text}_" \
-                                     f"{self.shot_text}_{self.task_text}.hip"
-                self.path.setText(self.complete_path)
+                if self.project_dir.isChecked() and self.scene_dir.isChecked():
+
+                    self.path.setText(f"{dirname}/{project_folder}/{scene_folder}/"
+                                      f"{basename}")
+
+                elif self.project_dir.isChecked():
+
+                    self.path.setText(f"{dirname}/{project_folder}/"
+                                      f"{basename}")
+
+                elif self.scene_dir.isChecked():
+
+                    self.path.setText(f"{dirname}/{scene_folder}/"
+                                      f"{basename}")
+
+                else:
+                    self.complete_path = f"{self.mega_path}{self.project_text}_{self.sequence_text}_" \
+                                         f"{self.shot_text}_{self.task_text}.hip"
+                    self.path.setText(self.complete_path)
+        except:
+            self.warning_message()
 
     def notes(self):
-        """ Testing for now.
+        """ Get and set the notes of each task from the flow
+            by the json data.
         """
-        if self.check_notes.isChecked():
-            r = self.get_json_tasks()["Notes"]
-            # Notes text
-            self.notes_text = QtWidgets.QTextEdit()
-            self.notes_text.setReadOnly(True)
-            self.grid_lyt.addWidget(self.notes_text, 4, 0)
+        try:
+            if self.check_notes.isChecked():
+                # Get the notes at the json data
+                notes_res = self.get_json_tasks()["Notes"]
 
-            for i in r:
-                for j in i["tasks"]:
-                    if self.task_text == j["name"]:
-                        content = i["content"]
-                        self.notes_text.setText(content)
-        else:
-            self.notes_text.deleteLater()
+                for note in notes_res:
+                    # Get the tasks in the notes data and set the notes
+                    for task in note["tasks"]:
+                        if self.task_text == task["name"]:
+                            self.content = note["content"]
+                            self.notes_text.setText(self.content)
+            else:
+                # Delete the notes if isn't checked
+                self.notes_text.clear()
+        except:
+            self.warning_message()
 
     def get_assets(self):
-        """ Testing for now.
-        """
-        if self.assets_check.isChecked():
-            json_assets = self.get_json_tasks()["Assets"]
-            # Assets list
-            self.assets_list = QtWidgets.QListWidget()
-            self.assets_list.addItems(["Test1", "Test2", "Test3"])
-            self.grid_lyt.addWidget(self.assets_list, 4, 1)
-            for i in json_assets:
-                print(i)
+        """ Get assets of each shot from flow and show in a list widget."""
+        try:
+            if self.assets_check.isChecked():
+                json_assets = self.get_json_tasks()["Assets"]
 
-        else:
-            self.assets_list.deleteLater()
+                assets_list = [asset["code"] for asset in json_assets
+                               for shot in asset["shots"]
+                               if self.shot_text == shot["name"]]
+
+                self.assets_list.addItems(assets_list)
+
+            else:
+                self.assets_list.clear()
+                self.import_assets_list.clear()
+
+        except:
+            self.warning_message()
+
+    def assets_to_import(self):
+        """ Gets the assets selected of the assets list and creates a new
+            list for add this in a list that the assets are ready to import.
+
+        :return: List with assets to import
+        :rtype: List
+        """
+        # Gets the selected assets
+        txt = self.assets_list.selectedItems()
+        # List comprehension that add these assets to an import list
+        import_assets = [t.text() for t in txt]
+
+        return import_assets
+
+    def assets_move(self):
+        """ Add the assets to the list using a tool button move."""
+        self.import_assets_list.addItems(self.assets_to_import())
+
+    def assets_to_remove(self):
+        """ Gets the assets selected of the assets import list and creates a new
+            list for add this in a list that the assets are ready to be deleted.
+
+        :return: List with assets to delete
+        :rtype: List
+        """
+        # List comprehension that add these assets to a remove list
+        remove_assets = [t for t in self.import_assets_list.selectedItems()]
+
+        return remove_assets
+
+    def asset_delete(self):
+        """ Delete the assets at the remove_assets using a tool button delete."""
+        # Gets each asset individually
+        for t in self.assets_to_remove():
+            # Get the asset index with the .row and delete with the takeItem
+            self.import_assets_list.takeItem(self.import_assets_list.row(t))
+
+    def dragEnterEvent(self, event):
+        event.accept()
+
+    def dragMoveEvent(self, event):
+        event.accept()
+
+    def dropEvent(self, event):
+        # Add the text of the dragged item to the import assets list
+        text = event.source().currentItem().text()
+        self.import_assets_list.addItem(text)
+        event.accept()
+
+    def keyPressEvent(self, event):
+        # Detects when key delete is pressed
+        if event.key() == QtCore.Qt.Key_Delete:
+            for asset in self.assets_to_remove():
+                # Get the asset index with the .row and delete with the takeItem
+                self.import_assets_list.takeItem(self.import_assets_list.row(asset))
+
 
     def build_scene(self):
         
@@ -450,7 +594,7 @@ class SceneBuilder(QtWidgets.QWidget):
         
         try:
             note = obj.createStickyNote()
-            note.setText(self.get_notes()[0]["content"])
+            note.setText(self.content)
             note.setPosition((0, 0))
         
         except:

@@ -1,4 +1,4 @@
-# import hou
+import hou
 import json
 import os
 import shotgun_api3
@@ -15,7 +15,7 @@ class JsonFlowData():
         self.create_path()
 
     def data_flow(self):
-        SG_USER = "aperonmxr@gmail.com"
+        SG_USER = os.environ["FLOW_USER"]
 
         filters = [
             ["email", "is", SG_USER]
@@ -61,12 +61,12 @@ class JsonFlowData():
             notes = self.sg.find("Note",filters,["content", "tasks",
                                                  "note_links"])
 
-            print(notes)
+            note_list += [note for note in notes]
 
-            note_list += [note for note in notes for link in note["note_links"]
-                          if link["name"] in self.data_shots()]
+            # note_list += [note for note in notes for link in note["note_links"]
+            #               if link["name"] in self.data_shots()]
 
-        # return note_list
+        return note_list
 
     def shot_assets(self):
         shot_assets_list = []
@@ -93,25 +93,19 @@ class JsonFlowData():
                                                      "sg_versions", "shots",
                                                      "sg_status_list"])
 
-            # for asset in assets:
-            #     for shot in asset["shots"]:
-            #         print(shot)
-            #         print(asset["code"])
-            #         if shot["name"] in self.data_shots():
-            #             print(True)
+            assets_list += [asset for asset in assets]
 
-            print(assets)
             # assets_list += [asset for asset in assets for shot in asset["shots"]
             #                 if shot["name"] in self.data_shots()]
 
-        # return assets_list
+        return assets_list
 
     def create_path(self):
         username = os.environ["USERNAME"]
-        # houdini_version = hou.applicationVersionString()
-        # v_split = houdini_version.split(".")
-        # hou_v = "houdini"+".".join([v_split[0], v_split[1]])
-        hou_v = "houdini20.5"
+        houdini_version = hou.applicationVersionString()
+        v_split = houdini_version.split(".")
+        hou_v = "houdini"+".".join([v_split[0], v_split[1]])
+        # hou_v = "houdini20.5"
         self.path = f"C:/Users/{username}/Documents/{hou_v}/otls/flowJson"
         self.file = f"{self.path}/dataFlow.json"
 
@@ -130,6 +124,3 @@ class JsonFlowData():
         except:
             with open(self.file, "w") as f:
                 json.dump(d, f, indent=4)
-
-x = JsonFlowData().data_notes()
-print(x)
