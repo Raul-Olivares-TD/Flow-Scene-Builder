@@ -564,6 +564,14 @@ class SceneBuilder(QtWidgets.QWidget):
         self.import_assets_list.addItem(text)
         event.accept()
 
+    def keyPressEvent(self, event):
+        # Detects when key delete is pressed
+        if event.key() == QtCore.Qt.Key_Delete:
+            for asset in self.assets_to_remove():
+                # Get the asset index with the .row and delete with the takeItem
+                self.import_assets_list.takeItem(self.import_assets_list.row(asset))
+
+
     def build_scene(self):
         #
         # obj = hou.node("/obj")
