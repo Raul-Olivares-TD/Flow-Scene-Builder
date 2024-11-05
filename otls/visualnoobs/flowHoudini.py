@@ -104,7 +104,7 @@ class SceneBuilder(QtWidgets.QWidget):
         # Text: Show the notes in a text
         self.notes_text = QtWidgets.QTextEdit()
         self.notes_text.setReadOnly(True)
-        self.grid_lyt.addWidget(self.notes_text, 4, 0)
+
 
         # Checkbox: Allows to show the assets
         self.assets_check = QtWidgets.QCheckBox("Get Assets")
@@ -165,6 +165,7 @@ class SceneBuilder(QtWidgets.QWidget):
         self.grid_lyt.addWidget(self.check_notes, 3, 0)
         self.grid_lyt.addWidget(self.assets_check, 3, 1)
         self.grid_lyt.addWidget(self.txt_assets_to_import, 3, 3)
+        self.grid_lyt.addWidget(self.notes_text, 4, 0)
         self.grid_lyt.addWidget(self.assets_list, 4, 1)
         self.grid_lyt.addLayout(self.assets_btn, 4, 2,
                                 alignment=QtCore.Qt.AlignCenter)
@@ -232,7 +233,7 @@ class SceneBuilder(QtWidgets.QWidget):
         self.path.setText("")
         try:
             self.task_text = ""
-            self.notes_text.deleteLater()
+            self.notes_text.clear()
         except:
             pass
 
@@ -488,7 +489,7 @@ class SceneBuilder(QtWidgets.QWidget):
                             self.notes_text.setText(content)
             else:
                 # Delete the notes if isn't checked
-                self.notes_text.deleteLater()
+                self.notes_text.clear()
         except:
             self.warning_message()
 
@@ -507,8 +508,8 @@ class SceneBuilder(QtWidgets.QWidget):
                 self.assets_list.addItems(assets_list)
 
             else:
-                self.assets_list.deleteLater()
-                self.import_assets_list.deleteLater()
+                self.assets_list.clear()
+                self.import_assets_list.clear()
 
         except:
             self.warning_message()
