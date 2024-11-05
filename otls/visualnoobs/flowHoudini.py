@@ -430,7 +430,7 @@ class SceneBuilder(QtWidgets.QWidget):
             # String with the text scenes
             scene_folder = "scenes"
 
-            # Check different options to create or not to create any directory
+            # Check different options to create or not any directory
             if os.path.splitdrive(self.complete_path)[0] != "C:":
                 if self.project_dir.isChecked() and self.scene_dir.isChecked():
 
@@ -497,13 +497,12 @@ class SceneBuilder(QtWidgets.QWidget):
             self.warning_message()
 
     def get_assets(self):
-        """ Get assets from flow and show in a list widget."""
+        """ Get assets of each shot from flow and show in a list widget."""
         try:
             if self.assets_check.isChecked():
                 json_assets = self.get_json_tasks()["Assets"]
 
-                assets_list = []
-                assets_list += [asset["code"] for asset in json_assets
+                assets_list = [asset["code"] for asset in json_assets
                                for shot in asset["shots"]
                                if self.shot_text == shot["name"]]
 
@@ -517,21 +516,40 @@ class SceneBuilder(QtWidgets.QWidget):
             self.warning_message()
 
     def assets_to_import(self):
+        """ Gets the assets selected of the assets list and creates a new
+            list for add this in a list that the assets are ready to import.
+
+        :return: List with assets to import
+        :rtype: List
+        """
+        # Gets the selected assets
         txt = self.assets_list.selectedItems()
+        # List comprehension that add these assets to an import list
         import_assets = [t.text() for t in txt]
 
         return import_assets
 
     def assets_move(self):
+        """ Add the assets to the list using a tool button move."""
         self.import_assets_list.addItems(self.assets_to_import())
 
     def assets_to_remove(self):
+        """ Gets the assets selected of the assets import list and creates a new
+            list for add this in a list that the assets are ready to be deleted.
+
+        :return: List with assets to delete
+        :rtype: List
+        """
+        # List comprehension that add these assets to a remove list
         remove_assets = [t for t in self.import_assets_list.selectedItems()]
 
         return remove_assets
 
     def asset_delete(self):
+        """ Delete the assets at the remove_assets using a tool button delete."""
+        # Gets each asset individually
         for t in self.assets_to_remove():
+            # Get the asset index with the .row and delete with the takeItem
             self.import_assets_list.takeItem(self.import_assets_list.row(t))
 
     def dragEnterEvent(self, event):
