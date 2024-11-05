@@ -112,6 +112,7 @@ class SceneBuilder(QtWidgets.QWidget):
 
         # Assets lists: Show the assets at the shot
         self.assets_list = QtWidgets.QListWidget()
+        self.assets_list.setDragEnabled(True)
         self.assets_list.setSelectionMode(
             QtWidgets.QAbstractItemView.ExtendedSelection)
         self.assets_list.itemSelectionChanged.connect(self.assets_to_import)
@@ -134,6 +135,8 @@ class SceneBuilder(QtWidgets.QWidget):
 
         # List: Assets list that will be imported in the scene
         self.import_assets_list = QtWidgets.QListWidget()
+        self.import_assets_list.setAcceptDrops(True)
+        self.import_assets_list.setDragDropMode(QtWidgets.QAbstractItemView.DropOnly)
         self.import_assets_list.setSelectionMode(
             QtWidgets.QAbstractItemView.ExtendedSelection)
         self.import_assets_list.itemSelectionChanged.connect(self.assets_to_remove)
@@ -494,8 +497,7 @@ class SceneBuilder(QtWidgets.QWidget):
             self.warning_message()
 
     def get_assets(self):
-        """ Testing for now.
-        """
+        """ Get assets from flow and show in a list widget."""
         try:
             if self.assets_check.isChecked():
                 json_assets = self.get_json_tasks()["Assets"]
@@ -531,6 +533,18 @@ class SceneBuilder(QtWidgets.QWidget):
     def asset_delete(self):
         for t in self.assets_to_remove():
             self.import_assets_list.takeItem(self.import_assets_list.row(t))
+
+    def dragEnterEvent(self, event):
+        event.accept()
+
+    def dragMoveEvent(self, event):
+        event.accept()
+
+    def dropEvent(self, event):
+        # Add the text of the dragged item to the import assets list
+        text = event.source().currentItem().text()
+        self.import_assets_list.addItem(text)
+        event.accept()
 
     def build_scene(self):
         #
