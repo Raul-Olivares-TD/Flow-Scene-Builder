@@ -1,7 +1,7 @@
 import json
 import jsonFlow
 import os
-from PySide2 import QtWidgets, QtCore, QtGui
+from PySide2 import QtWidgets, QtCore
 import psutil
 
 
@@ -212,11 +212,11 @@ class SceneBuilder(QtWidgets.QWidget):
         except:
             # Text Update Data Flow
             self.text_update = QtWidgets.QTextEdit()
-            self.text_update.setText("UPDATE THE DATA FLOW")
+            self.text_update.setText("UPDATE THE DATA FLOW FOR VIEW THE TABLE")
             self.text_update.setAlignment(QtCore.Qt.AlignCenter)
             # Modify the font size
             font = self.text_update.font()
-            font.setPointSize(42)
+            font.setPointSize(38)
             self.text_update.setFont(font)
             self.table_lyt.addWidget(self.text_update)
 
@@ -488,8 +488,8 @@ class SceneBuilder(QtWidgets.QWidget):
                     # Get the tasks in the notes data and set the notes
                     for task in note["tasks"]:
                         if self.task_text == task["name"]:
-                            content = note["content"]
-                            self.notes_text.setText(content)
+                            self.content = note["content"]
+                            self.notes_text.setText(self.content)
             else:
                 # Delete the notes if isn't checked
                 self.notes_text.clear()
@@ -500,9 +500,9 @@ class SceneBuilder(QtWidgets.QWidget):
         """ Get assets of each shot from flow and show in a list widget."""
         try:
             if self.assets_check.isChecked():
-                json_assets = self.get_json_tasks()["Assets"]
+                self.json_assets = self.get_json_tasks()["Assets"]
 
-                assets_list = [asset["code"] for asset in json_assets
+                assets_list = [asset["code"] for asset in self.json_assets
                                for shot in asset["shots"]
                                if self.shot_text == shot["name"]]
 
@@ -571,8 +571,27 @@ class SceneBuilder(QtWidgets.QWidget):
                 # Get the asset index with the .row and delete with the takeItem
                 self.import_assets_list.takeItem(self.import_assets_list.row(asset))
 
-
     def build_scene(self):
+        t = jsonFlow.JsonFlowData().assets_versions()
+        count = self.import_assets_list.count()
+        items = [self.import_assets_list.item(item).text()
+                 for item in range(count)]
+
+        drive_ids = []
+
+        for k, v in t.items():
+            asset = k.split("_")[0]
+            if asset in items:
+                drive_link = v[0]
+                drive_id = drive_link.split("/")[-2]
+                drive_ids.append(drive_id)
+
+        print(drive_ids)
+
+
+
+        # print(l)
+
         #
         # obj = hou.node("/obj")
         #
@@ -598,7 +617,7 @@ class SceneBuilder(QtWidgets.QWidget):
         #     os.makedirs(save_dir)
         #     hou.hipFile.save(save_file)
 
-        self.close()
+        # self.close()
 
 
 app = QtWidgets.QApplication([])
