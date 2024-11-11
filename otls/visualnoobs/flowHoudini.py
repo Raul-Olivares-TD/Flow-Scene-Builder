@@ -1,3 +1,4 @@
+import driveDownload
 import json
 import jsonFlow
 import os
@@ -14,22 +15,37 @@ class SceneBuilder(QtWidgets.QWidget):
 
     def build_layout(self):
         """ Creates the UI interfice and his elements."""
-        # CREATES LAYOUTS
-        main_lyt = QtWidgets.QVBoxLayout()  # Main layout
-        hor_lyt = QtWidgets.QHBoxLayout()  # Horizontal layout
-        self.table_lyt = QtWidgets.QVBoxLayout()  # Table layout
-        btn_lyt = QtWidgets.QHBoxLayout()  # Btn layout
-        self.grid_lyt = QtWidgets.QGridLayout()  # Grid layout
-        self.assets_btn = QtWidgets.QVBoxLayout() # Asset butons layout
+        ###################
+        # CREATES LAYOUTS #
+        ###################
 
-        # SET LAYOUTS
+        # Main layout
+        main_lyt = QtWidgets.QVBoxLayout()
+        # Horizontal layout
+        hor_lyt = QtWidgets.QHBoxLayout()
+        # Table layout
+        self.table_lyt = QtWidgets.QVBoxLayout()
+        # Btn layout
+        btn_lyt = QtWidgets.QHBoxLayout()
+        # Grid layout
+        self.grid_lyt = QtWidgets.QGridLayout()
+        # Asset buttons layout
+        self.assets_btn = QtWidgets.QVBoxLayout()
+
+        ###############
+        # SET LAYOUTS #
+        ###############
         self.setLayout(main_lyt)
         main_lyt.addLayout(hor_lyt)
         main_lyt.addLayout(self.table_lyt)
         main_lyt.addLayout(self.grid_lyt)
         main_lyt.addLayout(btn_lyt)
 
-        # ELEMENTS
+        ############
+        # ELEMENTS #
+        ############
+
+        # USER DATA
         # Label: Show the User title
         user_label = QtWidgets.QLabel("User: ")
 
@@ -37,12 +53,14 @@ class SceneBuilder(QtWidgets.QWidget):
         user = QtWidgets.QLabel()
         user.setText("aperonmxr@gmail.com")
 
+        # UPDATE BUTTON
         # Button: Update tasks, exec functions and creates the table
         update_btn = QtWidgets.QPushButton("Update Data Flow")
         update_btn.clicked.connect(self.exec_functions)
         update_btn.clicked.connect(self.get_json_tasks)
         update_btn.clicked.connect(self.create_table)
 
+        # SCENE PATH
         # Disks Group: Wraps the device section of the menu
         disks_group = QtWidgets.QGroupBox("Device")
         disks_group_lyt = QtWidgets.QVBoxLayout()
@@ -86,18 +104,19 @@ class SceneBuilder(QtWidgets.QWidget):
 
         # Tool Button: Dialog File
         btn_file = QtWidgets.QToolButton()
-        btn_file.clicked.connect(self.dialog_directory)
+        btn_file.clicked.connect(self.dialog_scene_directory)
         icon = QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DirIcon)
         btn_file.setIcon(icon)
 
         # Checkbox: Creates a project directory
         self.project_dir = QtWidgets.QCheckBox("Project directory")
-        self.project_dir.stateChanged.connect(self.add_directory)
+        self.project_dir.stateChanged.connect(self.scene_directory)
         # Checkbox: Creates a scenes directory
         self.scene_dir = QtWidgets.QCheckBox("Scene directory")
-        self.scene_dir.stateChanged.connect(self.add_directory)
+        self.scene_dir.stateChanged.connect(self.scene_directory)
 
+        # NOTES DATA
         # Checkbox: Allows to show the notes
         self.check_notes = QtWidgets.QCheckBox("View Notes")
         self.check_notes.stateChanged.connect(self.notes)
@@ -105,7 +124,7 @@ class SceneBuilder(QtWidgets.QWidget):
         self.notes_text = QtWidgets.QTextEdit()
         self.notes_text.setReadOnly(True)
 
-
+        # ASSETS DATA
         # Checkbox: Allows to show the assets
         self.assets_check = QtWidgets.QCheckBox("Get Assets")
         self.assets_check.stateChanged.connect(self.get_assets)
@@ -123,6 +142,7 @@ class SceneBuilder(QtWidgets.QWidget):
             QtWidgets.QStyle.SP_ArrowRight)
         self.btn_move.setIcon(right_arrow)
         self.btn_move.clicked.connect(self.assets_move)
+
         # Tool Button: Button to delete items
         self.btn_delete = QtWidgets.QToolButton()
         delete_icon = QtWidgets.QApplication.style().standardIcon(
@@ -131,7 +151,7 @@ class SceneBuilder(QtWidgets.QWidget):
         self.btn_delete.clicked.connect(self.asset_delete)
 
         # Label: Assets to import title
-        self.txt_assets_to_import = QtWidgets.QLabel("Assets to import")
+        txt_assets_to_import = QtWidgets.QLabel("Assets to import")
 
         # List: Assets list that will be imported in the scene
         self.import_assets_list = QtWidgets.QListWidget()
@@ -141,12 +161,23 @@ class SceneBuilder(QtWidgets.QWidget):
             QtWidgets.QAbstractItemView.ExtendedSelection)
         self.import_assets_list.itemSelectionChanged.connect(self.assets_to_remove)
 
+        # Label: Assets path title
+        assets_label = QtWidgets.QLabel("Assets Path:")
+
+        # Line edit: Assets path
+        self.assets_path = QtWidgets.QLineEdit()
+
+        # BUTTON CREATE SCENE
         # Button: Load Scene
         btn = QtWidgets.QPushButton("Scene Build")
         btn.clicked.connect(self.notes)
         btn.clicked.connect(self.build_scene)
+        btn.clicked.connect(self.download_drive_assets)
 
-        # ADD ELEMENTS TO THE LAYOUTS
+        ###############################
+        # ADD ELEMENTS TO THE LAYOUTS #
+        ###############################
+
         # Adds to the Horizontal layout
         hor_lyt.addWidget(user_label)
         hor_lyt.addWidget(user)
@@ -167,12 +198,14 @@ class SceneBuilder(QtWidgets.QWidget):
         self.grid_lyt.addWidget(self.scene_dir, 2, 4)
         self.grid_lyt.addWidget(self.check_notes, 3, 0)
         self.grid_lyt.addWidget(self.assets_check, 3, 1)
-        self.grid_lyt.addWidget(self.txt_assets_to_import, 3, 3)
+        self.grid_lyt.addWidget(txt_assets_to_import, 3, 3)
         self.grid_lyt.addWidget(self.notes_text, 4, 0)
         self.grid_lyt.addWidget(self.assets_list, 4, 1)
         self.grid_lyt.addLayout(self.assets_btn, 4, 2,
                                 alignment=QtCore.Qt.AlignCenter)
         self.grid_lyt.addWidget(self.import_assets_list, 4, 3)
+        self.grid_lyt.addWidget(assets_label, 5, 0)
+        self.grid_lyt.addWidget(self.assets_path, 5, 1)
 
         # Adds the Button Horizontal layout
         btn_lyt.addWidget(btn)
@@ -387,7 +420,7 @@ class SceneBuilder(QtWidgets.QWidget):
         message.setIcon(QtWidgets.QMessageBox.Warning)
         message.exec_()
 
-    def dialog_directory(self):
+    def dialog_scene_directory(self):
         """ Alternative window that allows select any directory on the pc."""
         # Create the dialog
         path = QtWidgets.QFileDialog.getExistingDirectory(
@@ -416,7 +449,7 @@ class SceneBuilder(QtWidgets.QWidget):
         except:
             self.warning_message()
 
-    def add_directory(self):
+    def scene_directory(self):
         """ Adds the project directory and the scenes directory to the paths
             if the checks of that options are checked.
         """
@@ -572,27 +605,7 @@ class SceneBuilder(QtWidgets.QWidget):
                 self.import_assets_list.takeItem(self.import_assets_list.row(asset))
 
     def build_scene(self):
-        t = jsonFlow.JsonFlowData().assets_versions()
-        count = self.import_assets_list.count()
-        items = [self.import_assets_list.item(item).text()
-                 for item in range(count)]
-
-        drive_ids = []
-
-        for k, v in t.items():
-            asset = k.split("_")[0]
-            if asset in items:
-                drive_link = v[0]
-                drive_id = drive_link.split("/")[-2]
-                drive_ids.append(drive_id)
-
-        print(drive_ids)
-
-
-
-        # print(l)
-
-        #
+        pass
         # obj = hou.node("/obj")
         #
         # try:
@@ -616,6 +629,35 @@ class SceneBuilder(QtWidgets.QWidget):
         #     save_dir = os.path.dirname(save_file)
         #     os.makedirs(save_dir)
         #     hou.hipFile.save(save_file)
+
+    def dialog_assets_directory(self):
+        pass
+
+    def assets_directory(self):
+        pass
+
+    def download_drive_assets(self):
+        """ Download from Google Drive the assets at the import_assets_list
+        to the scene.
+        """
+        # Dict with assets versions from the json
+        ver_dict = jsonFlow.JsonFlowData().assets_versions()
+        count = self.import_assets_list.count()
+        items = [self.import_assets_list.item(item).text()
+                 for item in range(count)]
+
+        drive_ids = []
+        path = "D:/assets"
+        for k, v in ver_dict.items():
+            asset = k.split("_")[0]
+            if asset in items:
+                drive_link = v[0]
+                drive_id = drive_link.split("/")[-2]
+                drive_ids.append(drive_id)
+
+        driveDownload.download_files(drive_ids, path)
+
+        # print(drive_ids)
 
         # self.close()
 

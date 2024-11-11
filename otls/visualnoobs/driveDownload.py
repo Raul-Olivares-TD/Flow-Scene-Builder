@@ -38,11 +38,10 @@ def authenticate():
     return creds
 
 
-def download_files(files_id, download_dir):
+def download_files(files_id, directory_path):
     """Downloads multiple files from Google Drive.
-    Args:
-        file_ids: List of file IDs to download
-        download_dir: Directory path where the files will be saved
+    :param files_id: List of file IDs to download
+    :param directory_path: Directory path where the files will be saved
     """
     creds = authenticate()
     service = build("drive", "v3", credentials=creds)
@@ -53,7 +52,7 @@ def download_files(files_id, download_dir):
         file_name = file_metadata["name"]
 
         # Set the full path for saving the file
-        download_path = os.path.join(download_dir, file_name)
+        download_path = os.path.join(directory_path, file_name)
 
         # Create the download request and file writer
         request = service.files().get_media(fileId=file_id)
@@ -71,9 +70,9 @@ def download_files(files_id, download_dir):
 
 # List of file IDs to download
 # These IDs files are in my drive
-files_id = ['1_Lc9B8smsiBiw02kC1G_-stSS9jwXPK8', '1buSfxRRsrQ8myxyLTYyoxwhzLgtBNtHE',
-            '1TUgXVqN0DV3BzqIKgJfMvR2ZTMPz3zKa', '10whGOWhI5cnaTxZrVwK9XxpDmmtDFE7Y',
-            '1a9AxfUzIMDbnOFebD2n6o81T06joJ67t']
-
-# Call the function with the directory path where files should be saved
-download_files(files_id, "D:\\assets")
+# files_id = ['1_Lc9B8smsiBiw02kC1G_-stSS9jwXPK8', '1buSfxRRsrQ8myxyLTYyoxwhzLgtBNtHE',
+#             '1TUgXVqN0DV3BzqIKgJfMvR2ZTMPz3zKa', '10whGOWhI5cnaTxZrVwK9XxpDmmtDFE7Y',
+#             '1a9AxfUzIMDbnOFebD2n6o81T06joJ67t']
+#
+# # Call the function with the directory path where files should be saved
+# download_files(files_id, "D:\\assets")
