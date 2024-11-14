@@ -8,9 +8,9 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 
+
 # Grant Permissions: If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/drive"]
-
 
 def authenticate():
     """Authenticate with Google Drive using the credentials json file."""
@@ -38,41 +38,38 @@ def authenticate():
     return creds
 
 
-def download_files(files_id, directory_path):
+def download_files(files_id, directory_path, progress_callback):
     """Downloads multiple files from Google Drive.
-    :param files_id: List of file IDs to download
-    :param directory_path: Directory path where the files will be saved
+    :param  files_id: List of file IDs to download (list)
+    :param directory_path: Directory path where the files will be saved (string)
+    :param progress_callback: Save progress data (int)
     """
+    os.makedirs(directory_path, exist_ok=True)
+
     creds = authenticate()
     service = build("drive", "v3", credentials=creds)
 
     for file_id in files_id:
-        # Get file metadata to preserve original name
-        file_metadata = service.files().get(fileId=file_id, fields="name").execute()
-        file_name = file_metadata["name"]
+        try:
+            # Get file metadata to preserve original name
+            file_metadata = service.files().get(fileId=file_id, fields="name").execute()
+            file_name = file_metadata["name"]
 
-        # Set the full path for saving the file
-        download_path = os.path.join(directory_path, file_name)
+            # Set the full path for saving the file
+            download_path = os.path.join(directory_path, file_name)
 
-        # Create the download request and file writer
-        request = service.files().get_media(fileId=file_id)
-        with io.FileIO(download_path, "wb") as file:
-            downloader = MediaIoBaseDownload(file, request)
-            done = False
-            while not done:
-                status, done = downloader.next_chunk()
-                print(f"Downloading {file_name}: {int(status.progress() * 100)}% complete")
+            # Create the download request and file writer
+            request = service.files().get_media(fileId=file_id)
+            with io.FileIO(download_path, "wb") as file:
+                downloader = MediaIoBaseDownload(file, request)
+                done = False
+                while not done:
+                    status, done = downloader.next_chunk()
+                    progress = int(status.progress() * 100)
+                    progress_callback(progress)
 
-        print(f"File {file_name} downloaded to {download_path}")
+            print(f"File {file_name} downloaded to {download_path}")
 
-
-# TESTING DOWNLOAD
-
-# List of file IDs to download
-# These IDs files are in my drive
-# files_id = ['1_Lc9B8smsiBiw02kC1G_-stSS9jwXPK8', '1buSfxRRsrQ8myxyLTYyoxwhzLgtBNtHE',
-#             '1TUgXVqN0DV3BzqIKgJfMvR2ZTMPz3zKa', '10whGOWhI5cnaTxZrVwK9XxpDmmtDFE7Y',
-#             '1a9AxfUzIMDbnOFebD2n6o81T06joJ67t']
-#
-# # Call the function with the directory path where files should be saved
-# download_files(files_id, "D:\\assets")
+        except Exception as e:
+            print(f"An error occurred while downloading file {file_id}: {e}")
+            continue  # Continuar con el siguiente archivo en caso de error
