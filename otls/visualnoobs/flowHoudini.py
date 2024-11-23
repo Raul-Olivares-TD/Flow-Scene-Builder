@@ -1,4 +1,5 @@
 import driveDownload
+import hou
 import json
 import jsonFlow
 import os
@@ -7,28 +8,55 @@ import psutil
 
 
 class DownloadThread(QtCore.QThread):
-    """ Open a secondary thrad to run the progress bar at the background."""
-    # Signal to emit the download progress
+    # Signal to update the progress bar
     progress = QtCore.Signal(int)
-    # Signal when the download finished
-    finish = QtCore.Signal()
+    # Signal to update the file name in the interface
+    file_name = QtCore.Signal(str)
+    # Signal to notify that the download has finished
+    download_complete = QtCore.Signal()
+    # Signal to notify that the download has been cancelled
+    download_canceled = QtCore.Signal()
+
 
     def __init__(self, files_id, directory_path):
-        """ Initialize the args that the function dowload_files
-            need to download the files.
-        """
         super().__init__()
-        # Get the ids of each file to download
         self.files_id = files_id
-        # Get the path to save the files
         self.directory_path = directory_path
+        # Indicator to cancel download
+        self.cancel_requested = False
+        self.downloaded_files = []
 
     def run(self):
-        """ Run the class and executes the signals."""
-        # Call download_files and pass self.progress.emit as the progress callback
-        driveDownload.download_files(self.files_id, self.directory_path, self.progress.emit)
-        # Emit the finish progress
-        self.finish.emit()
+        for file_id in self.files_id:
+            if self.cancel_requested:
+                self.download_canceled.emit()
+                return  # Exit the `run` method to stop the thread from running
+
+            try:
+                driveDownload.download_files(
+                    [file_id],
+                    self.directory_path,
+                    self.progress.emit,
+                    lambda file_name: self.list_file_name(file_name),
+                    # Access to cancel request at any time with the lambda function
+                    lambda: self.cancel_requested,
+
+                )
+            except Exception as e:
+                print(f"An error occurred while downloading file {file_id}: {e}")
+                continue
+
+        self.download_complete.emit()
+
+    def cancel_download(self):
+        """Método para solicitar la cancelación de la descarga."""
+        self.cancel_requested = True
+
+    def list_file_name(self, file_name):
+        """Almacena el nombre del archivo descargado."""
+        self.downloaded_files.append(file_name)
+        self.file_name.emit(file_name)
+
 
 class SceneBuilder(QtWidgets.QWidget):
     def __init__(self):
@@ -303,26 +331,9 @@ class SceneBuilder(QtWidgets.QWidget):
         btn.clicked.connect(self.notes)
         btn.clicked.connect(self.build_scene)
         btn.clicked.connect(self.download_drive_assets)
-        # btn.clicked.connect(self.dialog_test)
-        # btn.clicked.connect(self.llenar)
-        # Separator
-        self.sep1 = QtWidgets.QFrame()
-        self.sep1.setFrameShape(QtWidgets.QFrame.HLine)
-
-        # Download Label
-        self.down_label = QtWidgets.QLabel("Download Assets")
-        self.down_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.down_label.setVisible(False)
-
-        # Progress Bar
-        self.bar = QtWidgets.QProgressBar()
-        self.bar.setVisible(False)
-        self.bar.setAlignment(QtCore.Qt.AlignCenter)
+        btn.clicked.connect(self.download_assets_dialog)
 
         # ADD ELEMENTS TO THE LAYOUTS
-        self.btn_lyt.addWidget(self.sep1)
-        self.btn_lyt.addWidget(self.down_label)
-        self.btn_lyt.addWidget(self.bar)
         self.btn_lyt.addWidget(btn)
 
     def change_cheks(self):
@@ -749,6 +760,7 @@ class SceneBuilder(QtWidgets.QWidget):
         except:
             self.warning_message()
 
+
     def download_drive_assets(self):
         """ Download from Google Drive the assets at the import_assets_list
         to the scene.
@@ -760,57 +772,194 @@ class SceneBuilder(QtWidgets.QWidget):
         items = [self.import_assets_list.item(item).text()
                  for item in range(count)]
 
-        drive_ids = []
-        path = self.assets_path
+        self.drive_ids = []
+        self.path = self.assets_path
 
         for k, v in versions_dict.items():
             asset = k.split("_")[0]
             if asset in items:
                 drive_link = v[0]
                 drive_id = drive_link.split("/")[-2]
-                drive_ids.append(drive_id)
+                self.drive_ids.append(drive_id)
 
-        self.down_label.setVisible(True)
-        self.bar.setVisible(True)
-        self.thread = DownloadThread(drive_ids, path.text())
+    def download_assets_dialog(self):
+        self.download_dlg = QtWidgets.QDialog()
+        download_dlg_lyt = QtWidgets.QVBoxLayout()
+        self.download_text = QtWidgets.QLabel("Download Asset:")
+        self.download_text.setAlignment(QtCore.Qt.AlignCenter)
+        self.dlg_bar = QtWidgets.QProgressBar()
+        self.dlg_bar.setAlignment(QtCore.Qt.AlignCenter)
+        self.cancel_btn = QtWidgets.QPushButton("Cancel Download")
+        self.cancel_btn.clicked.connect(self.cancel_download)
+        self.download_dlg.setLayout(download_dlg_lyt)
+        download_dlg_lyt.addWidget(self.download_text)
+        download_dlg_lyt.addWidget(self.dlg_bar)
+        download_dlg_lyt.addWidget(self.cancel_btn)
+        self.thread = DownloadThread(self.drive_ids, self.path.text())
         self.thread.progress.connect(self.update_progress_bar)
-        self.thread.finish.connect(self.download_finished)
+        self.thread.file_name.connect(self.update_asset_text)
+        self.thread.download_complete.connect(self.add_to_list)
+        self.thread.download_complete.connect(self.download_finished)
         self.thread.start()
+        self.download_dlg.exec_()
 
     def update_progress_bar(self, value):
-        self.bar.setValue(value)
+        self.dlg_bar.setValue(value)
+
+    def update_asset_text(self, value):
+        self.download_text.setText(f"Download Asset: {value}")
+
+    def cancel_download(self):
+        print("cancel")
+        self.thread.cancel_download()
+
+    def add_to_list(self):
+        t = set(self.thread.downloaded_files)
+        return t
 
     def download_finished(self):
-        self.close()
+        self.download_dlg.close()
+        # print(f"Files download at {self.assets_path.text()}")
+        self.import_assets_to_scene()
+
+
+    def import_assets_to_scene2(self):
+        t = self.get_json_tasks()["Assets"]
+        obj = hou.node("/obj")
+        for j in self.add_to_list():
+            name = j.split(".")[0]
+            ext = j.split(".")[1]
+            for i in t:
+                if name in i["code"]:
+                    if ext == "abc":
+                        geo = obj.createNode("geo", "assets_abc")
+                        merge = geo.createNode("merge")
+                        if i["sg_asset_type"] == "Camera":
+                            abc_arch = obj.createNode("alembicarchive",
+                                                      name)
+                            abc_arch.parm("fileName").set(
+                                f"{self.path.text()}{name}.{ext}")
+                            abc_arch.parm("buildHierarchy").pressButton()
+                        else:
+                            abc_file = geo.createNode("alembic", name)
+                            abc_file.parm("fileName").set(
+                                f"{self.path.text()}/{name}.{ext}")
+                            unpack = abc_file.createOutputNode("unpack")
+                            convert = unpack.createOutputNode("convert")
+                            transform = convert.createOutputNode("xform")
+                            null = transform.createOutputNode("null",
+                                                              f"OUT_{name.upper()}")
+                            merge.setNextInput(null)
+                    elif ext == "fbx":
+                        geo = obj.createNode("geo", "assets_fbx")
+                        merge = geo.createNode("merge")
+                        if (i["sg_asset_type"] == "Creature"
+                                or i["sg_asset_type"] == "Character"):
+                            # print(f"Creature/Char {name}.{ext}")
+                            fbx_char = geo.createNode("fbxcharacterimport")
+                            fbx_char.parm("fbxfile").set(f"{self.path.text()}/"
+                                                         f"{name}.{ext}")
+                        else:
+                            print(f"Next fbx {name}.{ext}")
+                            fbx_file = geo.createNode("file")
+                            fbx_file.parm("file").set(f"{self.path.text()}/"
+                                                      f"{name}.{ext}")
+                    else:
+                        print(f"Rest assets {name}.{ext}")
+
+    def import_assets_to_scene(self):
+        t = self.get_json_tasks()["Assets"]
+        obj = hou.node("/obj")
+        geo = obj.createNode("geo", "assets")
+        geo.setPosition((0, -1))
+        merge = geo.createNode("merge")
+        for j in self.add_to_list():
+            name = j.split(".")[0]
+            ext = j.split(".")[1]
+            for i in t:
+                if name in i["code"]:
+                    if ext == "abc":
+                        if i["sg_asset_type"] == "Camera":
+                            abc_arch = obj.createNode("alembicarchive",
+                                                      name)
+                            abc_arch.parm("fileName").set(
+                                f"{self.assets_path.text()}{name}.{ext}")
+                            abc_arch.parm("buildHierarchy").pressButton()
+                            abc_arch.setPosition((0, -3))
+                        else:
+                            abc_file = geo.createNode("alembic", name)
+                            abc_file.parm("fileName").set(
+                                f"{self.assets_path.text()}{name}.{ext}")
+                            unpack = abc_file.createOutputNode("unpack")
+                            convert = unpack.createOutputNode("convert")
+                            transform = convert.createOutputNode("xform")
+                            transform.parm("scale").set(0.01)
+                            null = transform.createOutputNode("null",
+                                                              f"OUT_{name.upper()}")
+                            merge.setNextInput(null)
+
+                    elif ext == "fbx":
+                        if (i["sg_asset_type"] == "Creature"
+                                or i["sg_asset_type"] == "Character"):
+                            # print(f"Creature/Char {name}.{ext}")
+                            fbx_char = geo.createNode("fbxcharacterimport")
+                            fbx_char.parm("fbxfile").set(f"{self.assets_path.text()}"
+                                                         f"{name}.{ext}")
+                            null = fbx_char.createOutputNode("null",
+                                                             f"OUT_{name.upper()}")
+                            merge.setNextInput(null)
+                        else:
+                            # print(f"Next fbx {name}.{ext}")
+                            fbx_file = geo.createNode("file")
+                            fbx_file.parm("file").set(f"{self.assets_path.text()}"
+                                                      f"{name}.{ext}")
+                            transform = fbx_file.createOutputNode("xform")
+                            transform.parm("scale").set(0.01)
+                            null = transform.createOutputNode("null",
+                                                              f"OUT_{name.upper()}")
+                            merge.setNextInput(null)
+
+                    else:
+                        # print(f"Rest assets {name}.{ext}")
+                        file = geo.createNode("file")
+                        file.parm("file").set(f"{self.assets_path.text()}"
+                                              f"{name}.{ext}")
+                        transform = file.createOutputNode("xform")
+                        transform.parm("scale").set(0.01)
+                        null = transform.createOutputNode("null",
+                                                          f"OUT_{name.upper()}")
+                        merge.setNextInput(null)
+
+        obj.layoutChildren()
+        geo.layoutChildren()
+        self.build_scene()
 
     def build_scene(self):
-        pass
-        # obj = hou.node("/obj")
-        #
-        # try:
-        #     note = obj.createStickyNote()
-        #     note.setText(self.content)
-        #     note.setPosition((0, 0))
-        #
-        # except:
-        #     note.destroy()
-        #
-        # w_data = obj.createStickyNote()
-        # w_data.setText(f"{self.project_text} -> {self.sequence_text} -> "
-        #                f"{self.shot_text} -> {self.task_text}")
-        # w_data.setPosition((0, 4))
-        # w_data.setSize((4, 1))
-        #
-        # save_file = self.path.text()
-        # try:
-        #     hou.hipFile.save(save_file)
-        # except:
-        #     save_dir = os.path.dirname(save_file)
-        #     os.makedirs(save_dir)
-        #     hou.hipFile.save(save_file)
+        obj = hou.node("/obj")
 
-        # self.close()
+        try:
+            note = obj.createStickyNote()
+            note.setText(self.content)
+            note.setPosition((0, 0))
 
+        except:
+            note.destroy()
+
+        w_data = obj.createStickyNote()
+        w_data.setText(f"{self.project_text} -> {self.sequence_text} -> "
+                       f"{self.shot_text} -> {self.task_text}")
+        w_data.setPosition((0, 3))
+        w_data.setSize((4, 1))
+
+        save_file = self.path.text()
+        try:
+            hou.hipFile.save(save_file)
+        except:
+            save_dir = os.path.dirname(save_file)
+            os.makedirs(save_dir)
+            hou.hipFile.save(save_file)
+
+        self.close()
 
 
 app = QtWidgets.QApplication([])

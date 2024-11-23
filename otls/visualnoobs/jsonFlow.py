@@ -7,15 +7,15 @@ class JsonFlowData():
     def __init__(self):
         """Authentication for access to flow data."""
         self.sg = shotgun_api3.Shotgun(
-            "https://roadstudio.shotgrid.autodesk.com/",
-            script_name="road_api",
-            api_key="pxwnmapd~siqjgwFnz4cjzpca")
+            "https://dramastudio.shotgrid.autodesk.com/",
+            script_name="tdscript",
+            api_key="rkmbtqY#7tjjxtxplsbvodaaq")
 
         self.data_flow()
         self.create_path()
 
     def data_flow(self):
-        SG_USER = os.environ["FLOW_USER"]
+        SG_USER = "raul22_1996@outlook.es"
 
         filters = [
             ["email", "is", SG_USER]
@@ -105,7 +105,6 @@ class JsonFlowData():
         houdini_version = hou.applicationVersionString()
         v_split = houdini_version.split(".")
         hou_v = "houdini"+".".join([v_split[0], v_split[1]])
-        # hou_v = "houdini20.5"
         self.path = f"C:/Users/{username}/Documents/{hou_v}/otls/flowJson"
         self.file = f"{self.path}/dataFlow.json"
 
