@@ -21,7 +21,7 @@ import psutil
 class DownloadThread(QtCore.QThread):
     # Signal to update the progress bar
     progress = QtCore.Signal(int)
-    # Signal to update the file name in the interface
+    # Signal to stores the downloaded file names in a list
     file_name = QtCore.Signal(str)
     # Signal to notify that the download has finished
     download_complete = QtCore.Signal()
@@ -32,38 +32,50 @@ class DownloadThread(QtCore.QThread):
         super().__init__()
         self.files_id = files_id
         self.directory_path = directory_path
-        # Indicator to cancel download
         self.cancel_requested = False
         self.downloaded_files = []
 
     def run(self):
+        """ Iterates through file IDs, downloads each file while updating the 
+            progress bar and storing file names, and supports cancellation. 
+            Emits signals for progress,  completion, and cancellation, and 
+            displays errors if any occur.
+        """
         for file_id in self.files_id:
             if self.cancel_requested:
                 self.download_canceled.emit()
-                return  # Exit the `run` method to stop the thread from running
+                # Exit the `run` method to stop the thread from running
+                return 
 
             try:
                 driveDownload.download_files(
+                    # Files id for download the files 
                     [file_id],
+                    # The path dir for save the files
                     self.directory_path,
+                    # Emit the progress bar process
                     self.progress.emit,
-                    lambda file_name: self.list_file_name(file_name),
-                    # Access to cancel request at any time with the lambda function
+                    # Gets the file names and store it at a list 
+                    lambda file_name: self.file_name_list(file_name),
+                    # Access to cancel request at any time
                     lambda: self.cancel_requested
                 )
             except Exception as e:
-                hou.ui.displayMessage(f"An error occurred while downloading file {file_id}: {e}")
+                hou.ui.displayMessage(f"An error occurred while downloading file" 
+                f"{file_id}: {e}")
                 continue
 
         self.download_complete.emit()
   
     def cancel_download(self):
-        """MÃ©todo para solicitar la cancelaciÃ³n de la descarga."""
+        """ Method for request the cancellation of the download."""
         self.cancel_requested = True
         
-    def list_file_name(self, file_name):
-        """Almacena el nombre del archivo descargado."""
+    def files_name_list(self, file_name):
+        """ Stores the name of the file name downloading."""
+        # Add to the list the files downloaded
         self.downloaded_files.append(file_name)
+        # Signal for emit the files names
         self.file_name.emit(file_name)
     
 
@@ -212,7 +224,7 @@ class SceneBuilder(QtWidgets.QWidget):
         delete_icon = QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_TrashIcon)
         self.btn_delete.setIcon(delete_icon)
-        self.btn_delete.clicked.connect(self.asset_delete)
+        self.btn_delete.clicked.connect(self.delete_assets)
 
         # Label: Assets to import title
         txt_assets_to_import = QtWidgets.QLabel("Assets to import")
@@ -593,7 +605,7 @@ class SceneBuilder(QtWidgets.QWidget):
 
         return remove_assets
 
-    def asset_delete(self):
+    def delete_assets(self):
         """ Delete the assets at the remove_assets using a tool button delete."""
         # Gets each asset individually
         for remove in self.assets_to_remove():
@@ -601,18 +613,24 @@ class SceneBuilder(QtWidgets.QWidget):
             self.import_assets_list.takeItem(self.import_assets_list.row(remove))
 
     def dragEnterEvent(self, event):
+        """ Accepts the drag event when it enters the widget."""
         event.accept()
 
     def dragMoveEvent(self, event):
+        """ Allows the drag movement within the widget by accepting the event."""
         event.accept()
 
     def dropEvent(self, event):
+        """ Handles the drop event to add the dragged item's text to the
+            import assets list.
+        """
         # Add the text of the dragged item to the import assets list
         text = event.source().currentItem().text()
         self.import_assets_list.addItem(text)
         event.accept()
 
     def keyPressEvent(self, event):
+        """ Event that detects when any key has been pressed."""
         # Detects when key delete is pressed
         if event.key() == QtCore.Qt.Key_Delete:
             for asset in self.assets_to_remove():
@@ -775,7 +793,7 @@ class SceneBuilder(QtWidgets.QWidget):
 
     def download_drive_assets(self):
         """ Download from Google Drive the assets at the import_assets_list
-        to the scene.
+            to the scene.
         """
         # Dict with assets versions from the json
         versions_dict = jsonFlow.JsonFlowData().assets_versions()
@@ -784,8 +802,8 @@ class SceneBuilder(QtWidgets.QWidget):
         items = [self.import_assets_list.item(item).text()
                  for item in range(count)]
 
+        # List with the ids from the files
         self.drive_ids = []
-        # self.path = self.assets_path
 
         for k, v in versions_dict.items():
             asset = k.split("_")[0]
@@ -795,65 +813,99 @@ class SceneBuilder(QtWidgets.QWidget):
                 self.drive_ids.append(drive_id)
 
     def download_assets_dialog(self):
-        """ Testing..."""
+        """ Dialog with the download procces in a second thread."""
+        # Dialog Widget
         self.download_dlg = QtWidgets.QDialog()
+        # Dialog layout
         download_dlg_lyt = QtWidgets.QVBoxLayout()
+        # Download Title
         self.download_text = QtWidgets.QLabel("Download Asset:")
+        # Align title
         self.download_text.setAlignment(QtCore.Qt.AlignCenter)
+        # Progress bar widget
         self.dlg_bar = QtWidgets.QProgressBar()
+        # Align progress bar
         self.dlg_bar.setAlignment(QtCore.Qt.AlignCenter)
+        # Button for cancel download
         self.cancel_btn = QtWidgets.QPushButton("Cancel Download")
+        # Signal when button clicked
         self.cancel_btn.clicked.connect(self.cancel_download)
+        # Set the layout at the dialog
         self.download_dlg.setLayout(download_dlg_lyt)
+        # Add the elements to the dialog layout
         download_dlg_lyt.addWidget(self.download_text)
         download_dlg_lyt.addWidget(self.dlg_bar)
         download_dlg_lyt.addWidget(self.cancel_btn)
+        # Second threat download call
         self.thread = DownloadThread(self.drive_ids, self.assets_path.text())
+        # Connect progress bar signal with function update progress bar
         self.thread.progress.connect(self.update_progress_bar)
+        # Connect file name signal with function to show the name at the text
         self.thread.file_name.connect(self.update_asset_text)
-        self.thread.download_complete.connect(self.add_to_list)
+        # Connect complete signal 
+        self.thread.download_complete.connect(self.files_download_list)
         self.thread.download_complete.connect(self.download_finished)
+        # Start the download thread
         self.thread.start()
         
-        # Apply the Houdini stylesheet.
+        # Apply the Houdini stylesheet at the dialog
         self.download_dlg.setStyleSheet(hou.qt.styleSheet())
-        
+        # Exec the dialog
         self.download_dlg.exec_()
 
     def update_progress_bar(self, value):
-       self.dlg_bar.setValue(value)
+        """ Uptdate the value of the progress bar."""
+        self.dlg_bar.setValue(value)
 
     def update_asset_text(self, value):
+        """ Show the name of the files in the dialog."""
         self.download_text.setText(f"Download Asset: {value}")
-        self.v = value
                 
     def cancel_download(self):
+        """ Call the cancel download."""
+        # Call the method for cancel download
         self.thread.cancel_download()
+        # Close the dialog after cancel
         self.download_dlg.close()
+        # Show a message that the download is canceled
         hou.ui.displayMessage("Download Cancel")
 
-    def add_to_list(self):
-        t = set(self.thread.downloaded_files)
-        return t
+    def files_download_list(self):
+        """ Convert the list of the files in a set because the list
+            updates with each chunk and the file repeats.
+        :return: A set with all the files downloaded
+        :rtype: set    
+        """
+        files_set = set(self.thread.downloaded_files)
+        return files_set
         
     def download_finished(self):
+        """ Closes the download dialog, shows a completion message 
+            and call for imports assets into the scene.
+        """
+        # Close dialog after finish
         self.download_dlg.close()
+        # Show where the files saved
         hou.ui.displayMessage(f"Files download at {self.assets_path.text()}")
+        # Call the import assets into scene
         self.import_assets_to_scene()
         
     def import_assets_to_scene(self):
-        t = self.get_json_tasks()["Assets"]
+        """ Import the assets selected in the import assets list
+            into the scene.
+        """
+        json_assets = self.get_json_tasks()["Assets"]
         obj = hou.node("/obj")
         geo = obj.createNode("geo", "assets")
         geo.setPosition((0, -1))
         merge = geo.createNode("merge")
-        for j in self.add_to_list():
-            name = j.split(".")[0]
-            ext = j.split(".")[1]
-            for i in t:
-                if name in i["code"]:
+        for file in self.files_download_list():
+            name = file.split(".")[0]
+            ext = file.split(".")[1]
+            for asset in json_assets:
+                if name in asset["code"]:
                     if ext == "abc":
-                        if i["sg_asset_type"] == "Camera":
+                        if asset["sg_asset_type"] == "Camera":
                             abc_arch = obj.createNode("alembicarchive",
                                        name)
                             abc_arch.parm("fileName").set(
@@ -873,9 +925,8 @@ class SceneBuilder(QtWidgets.QWidget):
                             merge.setNextInput(null)
                                                       
                     elif ext == "fbx":
-                        if (i["sg_asset_type"] == "Creature"
+                        if (asset["sg_asset_type"] == "Creature"
                               or i["sg_asset_type"] == "Character"):
-                            # print(f"Creature/Char {name}.{ext}")
                             fbx_char = geo.createNode("fbxcharacterimport")
                             fbx_char.parm("fbxfile").set(f"{self.assets_path.text()}"
                             f"{name}.{ext}")
@@ -883,7 +934,6 @@ class SceneBuilder(QtWidgets.QWidget):
                             f"OUT_{name.upper()}")
                             merge.setNextInput(null)
                         else:
-                            # print(f"Next fbx {name}.{ext}")
                             fbx_file = geo.createNode("file")
                             fbx_file.parm("file").set(f"{self.assets_path.text()}"
                             f"{name}.{ext}")
@@ -894,7 +944,6 @@ class SceneBuilder(QtWidgets.QWidget):
                             merge.setNextInput(null)
                             
                     else:
-                        # print(f"Rest assets {name}.{ext}")
                         file = geo.createNode("file")
                         file.parm("file").set(f"{self.assets_path.text()}"
                         f"{name}.{ext}")
