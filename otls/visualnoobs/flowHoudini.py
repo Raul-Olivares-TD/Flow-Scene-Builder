@@ -3,8 +3,9 @@ import hou
 import json
 import jsonFlow
 import os
-from PySide2 import QtWidgets, QtCore
+from PySide2 import QtWidgets, QtCore, QtGui
 import psutil
+import webbrowser
 
 
 class DownloadThread(QtCore.QThread):
@@ -84,6 +85,8 @@ class SceneBuilder(QtWidgets.QWidget):
         self.grid_lyt = QtWidgets.QGridLayout()
         # Asset buttons layout
         self.assets_btn = QtWidgets.QVBoxLayout()
+        # Web buttons layout
+        self.web_btn = QtWidgets.QVBoxLayout()
         # Separator
         self.sep = QtWidgets.QFrame()
         self.sep.setFrameShape(QtWidgets.QFrame.HLine)
@@ -212,10 +215,29 @@ class SceneBuilder(QtWidgets.QWidget):
             QtWidgets.QAbstractItemView.ExtendedSelection)
         self.import_assets_list.itemSelectionChanged.connect(self.assets_to_remove)
 
+        # GitHub Button
+        username = os.environ["USERNAME"]
+        github_img_path = (f"C:/Users/{username}/Documents/houdini20.5/otls"
+                           f"/visualnoobs/img/github_logo_w.png")
+        github_btn = QtWidgets.QToolButton()
+        github_icon = QtGui.QIcon(github_img_path)
+        github_btn.setIcon(github_icon)
+        github_btn.clicked.connect(self.web_github)
+
+        # Linkedin Button
+        linkedin_img_path = (f"C:/Users/{username}/Documents/houdini20.5"
+                             f"/otls/visualnoobs/img/linkedin_logo_w.png")
+        linkedin_btn = QtWidgets.QToolButton()
+        linkedin_icon = QtGui.QIcon(linkedin_img_path)
+        linkedin_btn.setIcon(linkedin_icon)
+        linkedin_btn.clicked.connect(self.web_linkedin)
+
         # ADD ELEMENTS TO THE LAYOUTS
         # Horizontal layout
         self.assets_btn.addWidget(self.btn_move)
         self.assets_btn.addWidget(self.btn_delete)
+        self.web_btn.addWidget(github_btn)
+        self.web_btn.addWidget(linkedin_btn)
         # QGrid Layout
         self.grid_lyt.addWidget(self.check_notes, 1, 0)
         self.grid_lyt.addWidget(self.assets_check, 1, 1)
@@ -225,6 +247,8 @@ class SceneBuilder(QtWidgets.QWidget):
         self.grid_lyt.addLayout(self.assets_btn, 2, 2,
                                 alignment=QtCore.Qt.AlignCenter)
         self.grid_lyt.addWidget(self.import_assets_list, 2, 3)
+        self.grid_lyt.addWidget(self.web_btn, 2, 4,
+                                alignment=QtCore.Qt.AlignCenter)
 
     def save_path_layouts(self):
         """ Creates the path elements."""
@@ -606,6 +630,12 @@ class SceneBuilder(QtWidgets.QWidget):
                 # Get the asset index with the .row and delete with the takeItem
                 self.import_assets_list.takeItem(self.import_assets_list.row(asset))
 
+    def web_github(self):
+        webbrowser.open("https://github.com/Raul-Olivares-TD")
+
+    def web_linkedin(self):
+        webbrowser.open("https://www.linkedin.com/in/raul-olivares-fx/")
+
     def dialog_scene_directory(self):
         """ Alternative window that allows select any directory on the pc."""
         # Create the dialog
@@ -760,10 +790,9 @@ class SceneBuilder(QtWidgets.QWidget):
         except:
             self.warning_message()
 
-
     def download_drive_assets(self):
         """ Download from Google Drive the assets at the import_assets_list
-        to the scene.
+            to the scene.
         """
         # Dict with assets versions from the json
         versions_dict = jsonFlow.JsonFlowData().assets_versions()
@@ -772,8 +801,8 @@ class SceneBuilder(QtWidgets.QWidget):
         items = [self.import_assets_list.item(item).text()
                  for item in range(count)]
 
+        # List with the ids from the files
         self.drive_ids = []
-        self.path = self.assets_path
 
         for k, v in versions_dict.items():
             asset = k.split("_")[0]
@@ -783,109 +812,122 @@ class SceneBuilder(QtWidgets.QWidget):
                 self.drive_ids.append(drive_id)
 
     def download_assets_dialog(self):
+        """ Dialog with the download process in a second thread."""
+        # Dialog Widget
         self.download_dlg = QtWidgets.QDialog()
+        # Dialog layout
         download_dlg_lyt = QtWidgets.QVBoxLayout()
+        # Download Title
         self.download_text = QtWidgets.QLabel("Download Asset:")
+        # Align title
         self.download_text.setAlignment(QtCore.Qt.AlignCenter)
+        # Progress bar widget
         self.dlg_bar = QtWidgets.QProgressBar()
+        # Align progress bar
         self.dlg_bar.setAlignment(QtCore.Qt.AlignCenter)
+        # Button for cancel download
         self.cancel_btn = QtWidgets.QPushButton("Cancel Download")
+        # Signal when button clicked
         self.cancel_btn.clicked.connect(self.cancel_download)
+        # Set the layout at the dialog
         self.download_dlg.setLayout(download_dlg_lyt)
+        # Add the elements to the dialog layout
         download_dlg_lyt.addWidget(self.download_text)
         download_dlg_lyt.addWidget(self.dlg_bar)
         download_dlg_lyt.addWidget(self.cancel_btn)
-        self.thread = DownloadThread(self.drive_ids, self.path.text())
+        # Second threat download call
+        self.thread = DownloadThread(self.drive_ids, self.assets_path.text())
+        # Connect progress bar signal with function update progress bar
         self.thread.progress.connect(self.update_progress_bar)
+        # Connect file name signal with function to show the name at the text
         self.thread.file_name.connect(self.update_asset_text)
-        self.thread.download_complete.connect(self.add_to_list)
+        # Connect complete signal
+        self.thread.download_complete.connect(self.files_download_list)
         self.thread.download_complete.connect(self.download_finished)
+        # Start the download thread
         self.thread.start()
+
+        # Apply the Houdini stylesheet at the dialog
+        self.download_dlg.setStyleSheet(hou.qt.styleSheet())
+        # Exec the dialog
         self.download_dlg.exec_()
 
     def update_progress_bar(self, value):
+        """ Uptdate the value of the progress bar."""
         self.dlg_bar.setValue(value)
 
     def update_asset_text(self, value):
+        """ Show the name of the files in the dialog."""
         self.download_text.setText(f"Download Asset: {value}")
 
     def cancel_download(self):
-        print("cancel")
+        """ Call the cancel download."""
+        # Call the method for cancel download
         self.thread.cancel_download()
+        # Close the dialog after cancel
+        self.download_dlg.close()
+        # Show a message that the download is canceled
+        hou.ui.displayMessage("Download Cancel")
 
-    def add_to_list(self):
-        t = set(self.thread.downloaded_files)
-        return t
+    def files_download_list(self):
+        """ Convert the list of the files in a set because the list
+            updates with each chunk and the file repeats.
+        :return: A set with all the files downloaded
+        :rtype: set
+        """
+        files_set = set(self.thread.downloaded_files)
+        return files_set
 
     def download_finished(self):
+        """ Closes the download dialog, shows a completion message
+            and call for imports assets into the scene.
+        """
+        # Close dialog after finish
         self.download_dlg.close()
-        # print(f"Files download at {self.assets_path.text()}")
+        # Show where the files saved
+        hou.ui.displayMessage(f"Files download at {self.assets_path.text()}")
+        # Call the import assets into scene
         self.import_assets_to_scene()
 
-
-    def import_assets_to_scene2(self):
-        t = self.get_json_tasks()["Assets"]
-        obj = hou.node("/obj")
-        for j in self.add_to_list():
-            name = j.split(".")[0]
-            ext = j.split(".")[1]
-            for i in t:
-                if name in i["code"]:
-                    if ext == "abc":
-                        geo = obj.createNode("geo", "assets_abc")
-                        merge = geo.createNode("merge")
-                        if i["sg_asset_type"] == "Camera":
-                            abc_arch = obj.createNode("alembicarchive",
-                                                      name)
-                            abc_arch.parm("fileName").set(
-                                f"{self.path.text()}{name}.{ext}")
-                            abc_arch.parm("buildHierarchy").pressButton()
-                        else:
-                            abc_file = geo.createNode("alembic", name)
-                            abc_file.parm("fileName").set(
-                                f"{self.path.text()}/{name}.{ext}")
-                            unpack = abc_file.createOutputNode("unpack")
-                            convert = unpack.createOutputNode("convert")
-                            transform = convert.createOutputNode("xform")
-                            null = transform.createOutputNode("null",
-                                                              f"OUT_{name.upper()}")
-                            merge.setNextInput(null)
-                    elif ext == "fbx":
-                        geo = obj.createNode("geo", "assets_fbx")
-                        merge = geo.createNode("merge")
-                        if (i["sg_asset_type"] == "Creature"
-                                or i["sg_asset_type"] == "Character"):
-                            # print(f"Creature/Char {name}.{ext}")
-                            fbx_char = geo.createNode("fbxcharacterimport")
-                            fbx_char.parm("fbxfile").set(f"{self.path.text()}/"
-                                                         f"{name}.{ext}")
-                        else:
-                            print(f"Next fbx {name}.{ext}")
-                            fbx_file = geo.createNode("file")
-                            fbx_file.parm("file").set(f"{self.path.text()}/"
-                                                      f"{name}.{ext}")
-                    else:
-                        print(f"Rest assets {name}.{ext}")
-
     def import_assets_to_scene(self):
-        t = self.get_json_tasks()["Assets"]
+        """ Import the assets selected in the import assets list
+            into the scene.
+        """
+        # Get the assets data from json
+        json_assets = self.get_json_tasks()["Assets"]
+        # Obj Path
         obj = hou.node("/obj")
+        # Creates a geometry node in obj
         geo = obj.createNode("geo", "assets")
+        # Set the position of the node in the network
         geo.setPosition((0, -1))
+        # Creates a merge node inside the geometry node
         merge = geo.createNode("merge")
-        for j in self.add_to_list():
-            name = j.split(".")[0]
-            ext = j.split(".")[1]
-            for i in t:
-                if name in i["code"]:
+
+        # Get each file in the files download list
+        for file in self.files_download_list():
+            # Gets the name of the file
+            name = file.split(".")[0]
+            # Gets the extension of the file
+            ext = file.split(".")[1]
+
+            # Get each assets at the json
+            for asset in json_assets:
+                if name in asset["code"]:
+                    # Check the extension for correct way to import assets
                     if ext == "abc":
-                        if i["sg_asset_type"] == "Camera":
-                            abc_arch = obj.createNode("alembicarchive",
-                                                      name)
+                        # If the asset is a camera
+                        if asset["sg_asset_type"] == "Camera":
+                            null = obj.createNode("null")
+                            null.parm("scale").set(0.01)
+                            abc_arch = null.createOutputNode("alembicarchive",
+                                       name)
                             abc_arch.parm("fileName").set(
-                                f"{self.assets_path.text()}{name}.{ext}")
+                            f"{self.assets_path.text()}{name}.{ext}")
                             abc_arch.parm("buildHierarchy").pressButton()
                             abc_arch.setPosition((0, -3))
+
+                        # If the assets is an alembic but isn't a camera
                         else:
                             abc_file = geo.createNode("alembic", name)
                             abc_file.parm("fileName").set(
@@ -898,18 +940,20 @@ class SceneBuilder(QtWidgets.QWidget):
                                                               f"OUT_{name.upper()}")
                             merge.setNextInput(null)
 
+                    # Check the extension for correct way to import assets
                     elif ext == "fbx":
-                        if (i["sg_asset_type"] == "Creature"
-                                or i["sg_asset_type"] == "Character"):
-                            # print(f"Creature/Char {name}.{ext}")
+                        # If the asset is a character or creature
+                        if (asset["sg_asset_type"] == "Creature"
+                                or asset["sg_asset_type"] == "Character"):
                             fbx_char = geo.createNode("fbxcharacterimport")
                             fbx_char.parm("fbxfile").set(f"{self.assets_path.text()}"
                                                          f"{name}.{ext}")
                             null = fbx_char.createOutputNode("null",
                                                              f"OUT_{name.upper()}")
                             merge.setNextInput(null)
+
+                        # If the asset haven't skeleton
                         else:
-                            # print(f"Next fbx {name}.{ext}")
                             fbx_file = geo.createNode("file")
                             fbx_file.parm("file").set(f"{self.assets_path.text()}"
                                                       f"{name}.{ext}")
@@ -919,8 +963,8 @@ class SceneBuilder(QtWidgets.QWidget):
                                                               f"OUT_{name.upper()}")
                             merge.setNextInput(null)
 
+                    # Assets that isn't abc or fbx and need a file node to import
                     else:
-                        # print(f"Rest assets {name}.{ext}")
                         file = geo.createNode("file")
                         file.parm("file").set(f"{self.assets_path.text()}"
                                               f"{name}.{ext}")
@@ -930,13 +974,22 @@ class SceneBuilder(QtWidgets.QWidget):
                                                           f"OUT_{name.upper()}")
                         merge.setNextInput(null)
 
+        # Sort the nodes
         obj.layoutChildren()
         geo.layoutChildren()
         self.build_scene()
 
     def build_scene(self):
+        """Creates a Houdini scene with structured sticky notes and saves the project.
+        - Adds a sticky note at the origin with notes content.
+        - Adds a sticky note displaying project details (project, sequence, shot, task).
+        - Saves the .hip file at the specified path; creates directories if necessary.
+        - Closes the current UI after the operation.
+        """
+        # Creates a obj path
         obj = hou.node("/obj")
 
+        # Creates the project details note
         try:
             note = obj.createStickyNote()
             note.setText(self.content)
@@ -945,20 +998,25 @@ class SceneBuilder(QtWidgets.QWidget):
         except:
             note.destroy()
 
-        w_data = obj.createStickyNote()
-        w_data.setText(f"{self.project_text} -> {self.sequence_text} -> "
-                       f"{self.shot_text} -> {self.task_text}")
-        w_data.setPosition((0, 3))
-        w_data.setSize((4, 1))
+        # Creates the notes content
+        notes_content = obj.createStickyNote()
+        notes_content.setText(f"{self.project_text} -> {self.sequence_text} -> "
+                              f"{self.shot_text} -> {self.task_text}")
+        notes_content.setPosition((0, 3))
+        notes_content.setSize((4, 1))
 
+        # Path for sav
         save_file = self.path.text()
+        # Save if the dir exists
         try:
             hou.hipFile.save(save_file)
+        # If the dir doesn't exist create it and save
         except:
             save_dir = os.path.dirname(save_file)
             os.makedirs(save_dir)
             hou.hipFile.save(save_file)
 
+        # Close the UI to finish the process
         self.close()
 
 

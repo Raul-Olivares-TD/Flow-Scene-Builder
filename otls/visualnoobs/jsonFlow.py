@@ -46,11 +46,6 @@ class JsonFlowData():
 
         return tasks_list
 
-    def data_shots(self):
-        shot_list = [shot["entity"]["name"] for shot in self.data_tasks()]
-
-        return set(shot_list)
-
     def data_notes(self):
         note_list = []
         for user_project in self.data_flow():
@@ -68,20 +63,6 @@ class JsonFlowData():
 
         return note_list
 
-    def shot_assets(self):
-        shot_assets_list = []
-        for user_project in self.data_flow():
-            filters = [
-                ["project", "is", {"type": "Project", "id": user_project["id"]}]
-            ]
-
-            shot_assets = self.sg.find("Shot", filters, ["code", "assets"])
-
-            shot_assets_list += [asset for asset in shot_assets
-                                 if asset["code"] in self.data_shots()]
-
-        return shot_assets_list
-
     def data_assets(self):
         assets_list = []
         for user_project in self.data_flow():
@@ -95,8 +76,6 @@ class JsonFlowData():
 
             assets_list += [asset for asset in assets]
 
-            # assets_list += [asset for asset in assets for shot in asset["shots"]
-            #                 if shot["name"] in self.data_shots()]
 
         return assets_list
 

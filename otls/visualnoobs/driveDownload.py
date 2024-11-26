@@ -80,8 +80,6 @@ def download_files(files_id, directory_path, progress_callback,
                     progress_callback(progress)
                     file_name_callback(file_name)
 
-            # hou.ui.displayMessage(f"File {file_name} downloaded to {download_path}")
-
         except Exception as e:
             print(f"An error occurred while downloading file {file_id}: {e}")
             continue  # Continue with the netx file if an error ocurred
