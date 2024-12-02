@@ -1018,7 +1018,7 @@ class SceneBuilder(QtWidgets.QWidget):
 
         # Close the UI to finish the process
         self.close()
-
+        
 
 app = QtWidgets.QApplication([])
 w = SceneBuilder()
