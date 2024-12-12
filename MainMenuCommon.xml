@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Please see ExampleMenu.xml for examples that customise the main menu.-->
+<!-- Please see menu.xsd for the menu validation schema.-->
+<mainMenu>
+  <menuBar>
+	<!-- Create a submenu at the main menu.-->
+	<subMenu id="flow_houdini">
+	<label>Flow Houdini</label>
+	<!-- Insert at the end of the main menu.-->
+	<insertAfter/>
+		<!-- Creates a script item for call any script.-->
+		<scriptItem id="scene_builder">
+			<label>Scene Builder</label>
+			<!-- Path with the script to execute.-->
+			<scriptPath>$HOUDINI_USER_PREF_DIR/otls/visualnoobs/flowHoudini.py</scriptPath>
+		</scriptItem>
+		<scriptItem id="asset_importer">
+			<label>Assets Importer</label>
+			<scriptPath>$HOUDINI_USER_PREF_DIR/otls/visualnoobs/flowImporter.py</scriptPath>
+		</scriptItem>
+	</subMenu>
+  </menuBar>
+</mainMenu>
