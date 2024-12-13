@@ -12,7 +12,6 @@ from googleapiclient.http import MediaIoBaseDownload
 
 # Grant Permissions: If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/drive"]
-# It is best to save these files in the same directory as the script.
 token_path = "D:\\HoudiniDev\\houdiniTools\\token.json"
 cred_path = "D:\\HoudiniDev\\houdiniTools\\credentials.json"
 

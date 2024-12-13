@@ -11,15 +11,14 @@ class AssetsUI(QtWidgets.QWidget):
     check_assets_signal = QtCore.Signal(list)
     # Signal to notify when approved versions are ready
     assets_ready_signal = QtCore.Signal(list)
-    # Signal with the files text
+    # Signal with the assets path
     assets_path_signal = QtCore.Signal(str)
 
     def __init__(self):
         super().__init__()
         self.scene_data = SceneData()
         self.flow = FlowConnection()
-        self.down = DownloadAssets()
-        # self.importer = ImportAssets()
+        self.down = DownloadImportAssets()
 
         # Connect signals
         self.check_assets_signal.connect(self.flow.assets_id)
@@ -33,7 +32,7 @@ class AssetsUI(QtWidgets.QWidget):
 
 
     def main_layout(self):
-        """ Creates the elements of the interface."""
+        """ Creates the elements of the UI."""
         # Main layout
         main_lyt = QtWidgets.QVBoxLayout()
         # Set the layout to himself
@@ -67,7 +66,7 @@ class AssetsUI(QtWidgets.QWidget):
         ####################
         # ASSETS SAVE PATH #
         ####################
-        #
+        # Layout for the assets path
         path_lyt = QtWidgets.QHBoxLayout()
         # Label
         assets_label = QtWidgets.QLabel("Assets Path")
@@ -77,11 +76,16 @@ class AssetsUI(QtWidgets.QWidget):
         self.check_assets_path()
         # Dialog button
         dialog_button = QtWidgets.QToolButton()
+        # Icon Dir
         icon = QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DirIcon)
+        # Set the icon
         dialog_button.setIcon(icon)
+        # Emit signal to open a dialog
         dialog_button.clicked.connect(self.dialog_assets_directory)
+        # Add the layout to the main layout
         main_lyt.addLayout(path_lyt)
+        # Add widgets to the asset path layout
         path_lyt.addWidget(assets_label, alignment=QtCore.Qt.AlignCenter)
         path_lyt.addWidget(self.assets_path)
         path_lyt.addWidget(dialog_button)
@@ -89,9 +93,11 @@ class AssetsUI(QtWidgets.QWidget):
         ###################
         # IMPORTER BUTTON #
         ###################
+        # Importer button
         imp_btn = QtWidgets.QPushButton("IMPORT ASSETS TO SCENE")
+        # Signal
         imp_btn.clicked.connect(self.checked_assets)
-
+        # Add button to the main layout
         main_lyt.addWidget(imp_btn)
 
     def group_box(self, title, content):
@@ -189,9 +195,13 @@ class AssetsUI(QtWidgets.QWidget):
         self.check_assets_signal.emit(items)
         # Get approved versions and emit the ready signal
         approved_versions = self.flow.approved_versions()
+        # Emit the approved versions
         self.assets_ready_signal.emit(approved_versions)
+        # Get the assets path
         assets_path = f"{self.assets_path.text()}"
+        # Emit the assets path signal
         self.assets_path_signal.emit(assets_path)
+        # Close the window
         self.close()
 
 
@@ -229,7 +239,7 @@ class FlowConnection:
             api_key="rkmbtqY#7tjjxtxplsbvodaaq")
 
         self.scene_data = SceneData()
-        self.down = DownloadAssets()
+        self.down = DownloadImportAssets()
         self.asset_ids = None
 
     def get_project_id(self):
@@ -284,6 +294,11 @@ class FlowConnection:
                           for asset in assets]
 
     def approved_versions(self):
+        """ Getting the approved versions of each asset selected.
+
+        :return: A list with a dict with the version of each asset at the shot
+        :rtype: list
+        """
         # Searching for approved versions related to those assets
         version_filters = [
             ["project", "is", {"type": "Project", "id": self.get_project_id()}],
@@ -350,7 +365,7 @@ class DownloadThread(QtCore.QThread):
         self.file_name.emit(file_name)
 
 
-class DownloadAssets:
+class DownloadImportAssets:
     def drive_files_id(self, approved_versions):
         """ Generates the id for download the Google Drive files.
 

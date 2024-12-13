@@ -70,6 +70,9 @@ class SceneBuilder(QtWidgets.QWidget):
         self.scene_load_layout()
         self.build_tasks()
 
+        # Apply the Houdini stylesheet.
+        self.setStyleSheet(hou.qt.styleSheet())
+
     def build_layouts(self):
         """ Creates the layouts necessary to the UI."""
         # CREATES LAYOUTS
@@ -247,7 +250,7 @@ class SceneBuilder(QtWidgets.QWidget):
         self.grid_lyt.addLayout(self.assets_btn, 2, 2,
                                 alignment=QtCore.Qt.AlignCenter)
         self.grid_lyt.addWidget(self.import_assets_list, 2, 3)
-        self.grid_lyt.addWidget(self.web_btn, 2, 4,
+        self.grid_lyt.addLayout(self.web_btn, 2, 4,
                                 alignment=QtCore.Qt.AlignCenter)
 
     def save_path_layouts(self):
@@ -911,7 +914,7 @@ class SceneBuilder(QtWidgets.QWidget):
             # Gets the extension of the file
             ext = file.split(".")[1]
 
-            # Get each assets at the json
+            # Get each asset at the json
             for asset in json_assets:
                 if name in asset["code"]:
                     # Check the extension for correct way to import assets
@@ -1018,9 +1021,7 @@ class SceneBuilder(QtWidgets.QWidget):
 
         # Close the UI to finish the process
         self.close()
-        
 
-app = QtWidgets.QApplication([])
+
 w = SceneBuilder()
 w.show()
-app.exec_()

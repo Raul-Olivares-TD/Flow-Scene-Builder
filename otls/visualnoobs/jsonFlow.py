@@ -15,18 +15,32 @@ class JsonFlowData():
         self.create_path()
 
     def data_flow(self):
+        """ Gets data on the projects in which the artist participates.
+
+        :return: A dict with the user projects data
+        :rtype: dict
+        """
+        # FLOW user for search the data
         SG_USER = "raul22_1996@outlook.es"
 
+        # Serch if the user is in the project
         filters = [
             ["email", "is", SG_USER]
         ]
 
+        # Response find to flow for get data
         self.user_data = self.sg.find("HumanUser", filters=filters, fields=["projects"])[0]
+        # Gets the info of the project
         user_projects = self.user_data["projects"]
 
         return user_projects
 
     def data_tasks(self):
+        """ Gets the task data.
+
+        :return: A list with a dict with the task data assign to the user
+        :rtype: list
+        """        
         tasks_list = []
         for user_project in self.data_flow():
             filters = [
@@ -47,6 +61,11 @@ class JsonFlowData():
         return tasks_list
 
     def data_notes(self):
+        """ Gets the notes of each task.
+
+        :return: A list with a dict with the task notes
+        :rtype: list
+        """  
         note_list = []
         for user_project in self.data_flow():
             filters = [
@@ -58,12 +77,15 @@ class JsonFlowData():
 
             note_list += [note for note in notes]
 
-            # note_list += [note for note in notes for link in note["note_links"]
-            #               if link["name"] in self.data_shots()]
 
         return note_list
 
     def data_assets(self):
+        """ Gets the assets data.
+
+        :return: A list with the filters of the assets that we need
+        :rtype: list
+        """
         assets_list = []
         for user_project in self.data_flow():
             filters = [
@@ -79,17 +101,54 @@ class JsonFlowData():
 
         return assets_list
 
+    def assets_versions(self):
+        """ Gets the versions of each asset at the project.
+
+        :return: A dict with the assets versions that we need
+        :rtype: dict
+        """
+        drive_assets = {}
+        for user_project in self.data_flow():
+            # Required filters
+            filters = [
+                ["project", "is", {"type": "Project", "id": user_project["id"]}],
+            ]
+
+            # Requiered fields 
+            fields = ["code", "sg_status_list", "sg_path_to_geometry"]
+
+            # Response find to flow for get data
+            versions = self.sg.find("Version", filters, fields)
+
+            # Gets the version that is approved
+            for version in versions:
+                ver = version["code"]
+                link = version["sg_path_to_geometry"]
+                if version["sg_status_list"] == "apr":
+                    if ver in drive_assets:
+                        drive_assets[ver].append(link)
+                    else:
+                        drive_assets[ver] = [link]
+
+        return drive_assets
+
     def create_path(self):
+        """ Create the path for save the json using the current version of the
+            houdini used."""  
+        # Gets the username of the pc
         username = os.environ["USERNAME"]
+        # Gets the current houdini version
         houdini_version = hou.applicationVersionString()
+        # Building the path
         v_split = houdini_version.split(".")
         hou_v = "houdini"+".".join([v_split[0], v_split[1]])
+        # Path to save the json
         self.path = f"C:/Users/{username}/Documents/{hou_v}/otls/flowJson"
+        # Path and file name
         self.file = f"{self.path}/dataFlow.json"
 
-        return self.file
-
     def create_json(self):
+        """ Creates the json."""
         d = {}
         d["Tasks"] = self.data_tasks()
         d["Notes"] = self.data_notes()
