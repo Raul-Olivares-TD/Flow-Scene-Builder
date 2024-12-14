@@ -9,4 +9,4 @@
 ## HOW TO INSTALL
 
 - Put the directory visualnoobs inside the directory otls at the path at the directory $HFS it is the documents directory, something like this: "C:/Users/User/Documents/houdini20.5/".
-- The result should be something like: "C:/Users/Usuario/Documents/houdini20.5/otls/visualnoobs"
+- The result should be something like: "C:/Users/Usuario/Documents/houdini20.5/otls/visualnoobs".
