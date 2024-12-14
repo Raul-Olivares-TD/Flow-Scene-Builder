@@ -7,3 +7,5 @@
 - This tool includes an extra Flow to Houdini importer in case you have left any asset unimported in the scene and we need to work with it.
 
 ## HOW TO INSTALL
+- Put the directory visualnoobs inside the directory otls at the path at the directory $HFS it is the documents directory, something like this: "C:/Users/User/Documents/houdini20.5/".
+- The result should be something like: "C:/Users/Usuario/Documents/houdini20.5/otls/visualnoobs"
