@@ -98,3 +98,25 @@ api_key="ruqwhbkhsadahjsiyuqn")
 ![UISceneBuilder5](https://github.com/user-attachments/assets/d134599f-6f34-4ead-98d8-6350f7a1ce78)
 
 - Finally press the Scene Build button and the tool creates a scene at Houdini with all to need for work, assets, stick notes with data and save scene at the pc.
+
+#### FLOW IMPORTER (SUPPORT TOOL)
+
+##### USE INSTRUCTIONS
+
+- For this tool we need again the Authentication from Flow since the code has a different structure than the first tool.
+	- Add the Authentication at the FlowConnection class at the init method.
+	![FlowImporter1](https://github.com/user-attachments/assets/a0103cea-cd8b-4005-b9ed-24b2edc6a161)
+- For the rest of the use it is not necessary to make any new configuration.
+
+##### USE FUNCTION
+
+- User interface with scene data, this data is used to get the assets of this shot and know what we are working on.
+![FlowImporter2](https://github.com/user-attachments/assets/e7533c6f-a648-4297-aa18-46e238257cef)
+
+- List of assets that have the shot and need to be checked for import into the scene.
+![FlowImporter3](https://github.com/user-attachments/assets/c26d3102-8af3-412a-af39-c36e7ce7d419)
+
+- Path to save the assets, by default is use the same path from the main tool.
+![FlowImporter4](https://github.com/user-attachments/assets/881ef314-81ed-46e6-89c5-3e65a0b76756)
+
+- Finally press the Import button for import the assets to the scene.
