@@ -113,7 +113,7 @@ class SceneBuilder(QtWidgets.QWidget):
 
         # Label: Show the Flow user email
         user = QtWidgets.QLabel()
-        user.setText("aperonmxr@gmail.com")
+        user.setText(os.environ["FLOW_USER"])
 
         # UPDATE BUTTON
         # Button: Update tasks, exec functions and creates the table
@@ -356,7 +356,6 @@ class SceneBuilder(QtWidgets.QWidget):
         # Button: Load Scene
         btn = QtWidgets.QPushButton("Scene Build")
         btn.clicked.connect(self.notes)
-        btn.clicked.connect(self.build_scene)
         btn.clicked.connect(self.download_drive_assets)
         btn.clicked.connect(self.download_assets_dialog)
 
@@ -989,7 +988,7 @@ class SceneBuilder(QtWidgets.QWidget):
         - Saves the .hip file at the specified path; creates directories if necessary.
         - Closes the current UI after the operation.
         """
-        # Creates a obj path
+        # Creates an obj path
         obj = hou.node("/obj")
 
         # Creates the project details note
