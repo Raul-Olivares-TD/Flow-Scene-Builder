@@ -35,7 +35,7 @@
 
 ## HOW TO USE
 
-##### FLOW HOUDINI
+##### SCENE BUILDER (MAIN TOOL)
 
 - For use the main tool we need to have acces to the Flow API, for this needs the Authentication, somthing like this:
 	- shotgun_api3.Shotgun("https://studioname.shotgrid.autodesk.com/", script_name="apiScript",
