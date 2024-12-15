@@ -32,3 +32,16 @@
 - Flow user -> In that line we must write the user that we have in Flow/ShotGrid/ShotGun.
 		FLOW_USER = "email register at flow of each user" # Ex: "jj2inline@gmail.com"
 - In the repository the houdini.env file has these lines added, it is only necessary to change the path and the user of the flow correctly.
+
+## HOW TO USE
+
+##### FLOW HOUDINI
+
+- For use the main tool we need to have acces to the Flow API, for this needs the Authentication, somthing like this:
+	- shotgun_api3.Shotgun("https://studioname.shotgrid.autodesk.com/", script_name="apiScript",
+api_key="ruqwhbkhsadahjsiyuqn")
+
+-  Add the Authentication at the flowJson.py at the init method.
+![AuthenticationFLOW](https://github.com/user-attachments/assets/0fc04c66-bc41-4cf3-85b6-4dcbbb647fb6)
+- Add the Flow user name of each artist at the houdini.env file.
+![FLOW_USER](https://github.com/user-attachments/assets/904ebfa9-cc1e-4134-864f-b8230689c64c)
