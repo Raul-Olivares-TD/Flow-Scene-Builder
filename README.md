@@ -23,3 +23,12 @@
 - This tool is used at the main menu.
 - For this to work properly and be visible in the Houdini main menu put the MainMenuCommon.xml at the path of the *$HFS* *"C:\Users\User\Documents\houdini20.5"*.
 - Don't delete any MainMenuCommon.xml of the main path of sidefx Houdini,  this script only add the tool option with out modify the rest of the main menu.
+
+##### HOUDINI.ENV
+
+- Houdini have a houdini.env file in that we need to add this lines.
+- Python Path -> For use the scpripts properly at Houdini.
+		PYTHONPATH = "C:\Users\User\Documents\houdini20.5\otls\visualnoobs;C:\Users\User\Python\Python311\Lib\site-packages;C:\Users\User\Documents\houdini20.5\otls"
+- Flow user -> In that line we must write the user that we have in Flow/ShotGrid/ShotGun.
+		FLOW_USER = "email register at flow of each user" # Ex: "jj2inline@gmail.com"
+- In the repository the houdini.env file has these lines added, it is only necessary to change the path and the user of the flow correctly.
