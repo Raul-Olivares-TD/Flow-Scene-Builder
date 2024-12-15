@@ -97,4 +97,4 @@ api_key="ruqwhbkhsadahjsiyuqn")
 - When all are ready to create the scene we need to configure the path for save the scene and download the assets from the Google Drive.
 ![UISceneBuilder5](https://github.com/user-attachments/assets/d134599f-6f34-4ead-98d8-6350f7a1ce78)
 
-- To finally press the Scene Build button and the tool creates a scene at Houdini with all to need for work, assets, stick notes with data and save scene at the pc.
+- Finally press the Scene Build button and the tool creates a scene at Houdini with all to need for work, assets, stick notes with data and save scene at the pc.
