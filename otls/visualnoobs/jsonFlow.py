@@ -21,7 +21,7 @@ class JsonFlowData():
         :rtype: dict
         """
         # FLOW user for search the data
-        SG_USER = "raul22_1996@outlook.es"
+        SG_USER = os.environ["FLOW_USER"]
 
         # Serch if the user is in the project
         filters = [
