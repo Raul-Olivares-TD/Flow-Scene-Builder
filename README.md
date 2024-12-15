@@ -35,7 +35,9 @@
 
 ## HOW TO USE
 
-##### SCENE BUILDER (MAIN TOOL)
+#### SCENE BUILDER (MAIN TOOL)
+
+##### USE INSTRUCTIONS
 
 - For use the main tool we need to have acces to the Flow API, for this needs the Authentication, somthing like this:
 	- shotgun_api3.Shotgun("https://studioname.shotgrid.autodesk.com/", script_name="apiScript",
@@ -45,3 +47,54 @@ api_key="ruqwhbkhsadahjsiyuqn")
 ![AuthenticationFLOW](https://github.com/user-attachments/assets/0fc04c66-bc41-4cf3-85b6-4dcbbb647fb6)
 - Add the Flow user name of each artist at the houdini.env file.
 ![FLOW_USER](https://github.com/user-attachments/assets/904ebfa9-cc1e-4134-864f-b8230689c64c)
+- The main tool also needs a Google Drive API authentication since we will download the assets from Google Drive.
+	- For do that we need to have acces to the Google Drive API like admin or by invited.
+
+##### CREATE GOOGLE DRIVE API
+
+###### 1. Enable the Google Drive API
+
+1. Go to the [Google Drive API Quickstart](https://developers.google.com/drive/api/quickstart/python).
+2. Click **Enable the API**.
+3. Create a new project if you don’t already have one:
+   - Click on your project name at the top left.
+   - Select "New Project" and give it a name.
+4. Once the project is created, enable the Google Drive API for it.
+
+###### 2. Configure OAuth Consent Screen
+1. Go to the [OAuth Consent Screen settings](https://console.cloud.google.com/apis/credentials/consent).
+2. Select **External** for app type.
+3. Fill in basic app information:
+   - App name, email, and other details.
+4. Add test users:
+   - Include the emails of the users who will test the app.
+
+###### 3. Create API Credentials
+1. Go to the [Credentials page](https://console.cloud.google.com/apis/credentials).
+2. Click **Create Credentials** → **OAuth Client ID**.
+3. Choose "Desktop App" as the application type.
+4. Enter a name for the client (e.g., "My Desktop App").
+5. Download the credentials JSON file:
+   - Save it as `credentials.json` in the folder where your script will run.
+
+###### 4. Use the Credentials in Your Script
+- Use the `credentials.json` file to authenticate and access the Google Drive API in your Python script. The [Quickstart guide](https://developers.google.com/drive/api/quickstart/python) provides example code for this step.
+
+##### USE FUNCTION
+
+- UI with a user info at start with a button that allow update the Flow data.
+![UISceneBuilder1](https://github.com/user-attachments/assets/24b5ff33-4741-4394-b6c8-1b4a678e855d)
+
+- The next step is show the data at the table with all the tasks of the user have to work.
+![UISceneBuilder2](https://github.com/user-attachments/assets/e1f76a3c-b3f7-43b0-9945-1c9b725da160)
+	- If you don't have a json at the local path yet, the table is generated empty, press the upload button to download the data.
+	![UISceneBuilder3](https://github.com/user-attachments/assets/eec92c91-be6a-44d5-8016-060a80046364)
+
+- By selecting any task from the table we can check the boxes to get the notes of the task, the assets that the shot have and decide what of this assets needs to import to the scene.
+![UISceneBuilder4](https://github.com/user-attachments/assets/4fdcc9f2-3a12-440c-af5b-17fc92cbbc09)
+	- You can use the buttons to move the assets to the import list or you can also drag and drop and delete them with the delete key on the keyboard.
+
+- When all are ready to create the scene we need to configure the path for save the scene and download the assets from the Google Drive.
+![UISceneBuilder5](https://github.com/user-attachments/assets/d134599f-6f34-4ead-98d8-6350f7a1ce78)
+
+- To finally press the Scene Build button and the tool creates a scene at Houdini with all to need for work, assets, stick notes with data and save scene at the pc.
